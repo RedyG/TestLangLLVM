@@ -28,22 +28,30 @@ MatchResult MatchIdentifier(std::string_view input) {
 }
 
 
-MatchResult MatchFloatLiteral(std::string_view input) {
+MatchResult MatchDouble(std::string_view input) {
 	// 1515_15.51_5
-	bool decimal = false;
+	bool inDecimal = false;
+	bool moreThanOneDecimal = false;
 	for (int i = 0; i < input.length(); i++) {
 		char c = input[i];
-		if (!std::isdigit(c) && c != '_' && c != '.') {
-			return MatchResult(i > 0, i, input.substr(0, i));
-		}
-		else if (c == '.') {
-			if (decimal) {
-				throw std::exception("Couldn't parse float literal");
-			}
+		if (c == '_')
+			continue;
 
-			decimal = true;
+		if (std::isdigit(c)) {
+			if (inDecimal)
+				moreThanOneDecimal = true;
+		}
+		else {
+			if (inDecimal && moreThanOneDecimal) 
+				return MatchResult(true, i, input.substr(0, i));
+			else if (c == '.')
+				inDecimal = true;
+			else
+				return MatchResult();
 		}
 	}
+
+	return MatchResult();
 }
 
 std::vector<TokenMatcher<TokenType>> tokenMatchers {
@@ -61,7 +69,7 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 		TokenMatcher<TokenType>(TokenType::Pub, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "pub"); }),
 		TokenMatcher<TokenType>(TokenType::Class, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "class"); }),
 		TokenMatcher<TokenType>(TokenType::Identifier, MatchIdentifier),
-		TokenMatcher<TokenType>(TokenType::FloatLiteral, MatchFloatLiteral),
+		TokenMatcher<TokenType>(TokenType::Double, MatchDouble),
 };
 
 RedyLexer CreateRedyLexer(std::string_view input)

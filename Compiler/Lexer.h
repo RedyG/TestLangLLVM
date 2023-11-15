@@ -37,8 +37,6 @@ public:
 
 template<class T> struct TokenMatcher
 {
-private:
-    std::function<MatchResult(std::string_view)> m_matcher;
 public:
     T Type;
 
@@ -55,15 +53,13 @@ public:
     {
         return m_matcher(input);
     }
+private:
+    std::function<MatchResult(std::string_view)> m_matcher;
 };
 
 
 template<class T> class Lexer
 {
-private:
-    std::string_view m_input;
-    Token<T> m_token;
-
 public:
     std::vector<TokenMatcher<T>>& TokenMatchers;
 
@@ -106,4 +102,7 @@ public:
 
         throw std::exception("No match found");
     }
+private:
+    std::string_view m_input;
+    Token<T> m_token;
 };

@@ -18,7 +18,7 @@ enum class TokenType {
     Class,
 
     Identifier,
-    FloatLiteral
+    Double
 };
 
 using RedyLexer = Lexer<TokenType>;

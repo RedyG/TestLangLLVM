@@ -3,7 +3,7 @@
 
 void main() {
 	std::cout << "hello world!!";
-	RedyLexer lexer = CreateRedyLexer("pub class ");
-	std::cout << (int)lexer.Consume().Type;
-	std::cout << (int)lexer.Consume().Type;
+	RedyLexer lexer = CreateRedyLexer("2.05151 0251951_519851.2 ");
+	std::cout << lexer.Consume().Content;
+	std::cout << lexer.Consume().Content;
 }
