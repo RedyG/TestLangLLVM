@@ -61,9 +61,9 @@ private:
 template<class T> class Lexer
 {
 public:
-    std::vector<TokenMatcher<T>>& TokenMatchers;
+    std::vector<TokenMatcher<T>>* TokenMatchers;
 
-    Lexer(std::string_view input, std::vector<TokenMatcher<T>>& tokenMatchers) :
+    Lexer(std::string_view input, std::vector<TokenMatcher<T>>* tokenMatchers) :
         m_token(static_cast<T>(0), std::string_view()), TokenMatchers(tokenMatchers), m_input(input) {}
 
 
@@ -89,7 +89,7 @@ public:
         if (i > 0)
             m_input = m_input.substr(i);
 
-        for (const TokenMatcher<T>& tokenMatcher : TokenMatchers)
+        for (const TokenMatcher<T>& tokenMatcher : *TokenMatchers)
         {
             MatchResult match = tokenMatcher.Match(m_input);
             if (match.Matched)

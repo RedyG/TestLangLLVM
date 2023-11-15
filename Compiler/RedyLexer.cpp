@@ -1,4 +1,3 @@
-#pragma once
 #include "RedyLexer.h"
 #include <string>
 #include <cwctype>
@@ -74,5 +73,5 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 
 RedyLexer CreateRedyLexer(std::string_view input)
 {
-	return RedyLexer(input, tokenMatchers);
+	return RedyLexer(input, &tokenMatchers);
 }

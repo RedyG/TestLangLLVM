@@ -19,7 +19,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RedyLexer.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RedyParser.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -27,6 +30,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RedyLexer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RedyParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AST.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
