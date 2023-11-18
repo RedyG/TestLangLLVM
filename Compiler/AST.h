@@ -1,21 +1,61 @@
 #pragma once
+#include "RedyLexer.h"
+#pragma warning(disable:4146)
+#include "llvm/IR/IRBuilder.h";
 
 class ExprAST {
-
+public:
+	virtual double CodeGen() = 0;
 };
 
-class DoubleExprAST : public ExprAST {
+using ExprPtr = std::unique_ptr<ExprAST>;
+
+class DoubleExp : public ExprAST {
 public:
 	double Value;
 
-	DoubleExprAST(double value) : Value(value) {}
+	double CodeGen() override;
+
+	DoubleExp(double value) : Value(value) {}
 };
 
-class BinOpExprAST : public ExprAST {
+class BinOpExpr : public ExprAST {
 public:
-	std::unique_ptr<ExprAST> LHS;
+	ExprPtr LHS;
 	TokenType Op;
-	std::unique_ptr<ExprAST> RHS;
+	ExprPtr RHS;
 
-	BinOpExprAST(std::unique_ptr<ExprAST> lhs, TokenType op, std::unique_ptr<ExprAST> rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
+	double CodeGen() override;
+
+	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
+};
+
+class VariableExpr : public ExprAST {
+public:
+	std::string_view Name;
+
+	double CodeGen() override;
+
+	VariableExpr(std::string_view name) : Name(name) {}
+};
+
+class CallExpr : public ExprAST {
+public:
+	ExprPtr Callee;
+	std::vector<ExprPtr> Params;
+
+	double CodeGen() override;
+
+	CallExpr(ExprPtr callee, std::vector<ExprPtr> params)
+		: Callee(std::move(callee)), Params(std::move(params)) {}
+};
+
+class UnaryExpr : public ExprAST {
+public:
+	TokenType Op;
+	ExprPtr Expr;
+
+	double CodeGen() override;
+
+	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
 };

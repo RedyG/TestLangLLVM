@@ -63,8 +63,8 @@ template<class T> class Lexer
 public:
     std::vector<TokenMatcher<T>>* TokenMatchers;
 
-    Lexer(std::string_view input, std::vector<TokenMatcher<T>>* tokenMatchers) :
-        m_token(static_cast<T>(0), std::string_view()), TokenMatchers(tokenMatchers), m_input(input) {}
+    Lexer(std::string_view input, std::vector<TokenMatcher<T>>* tokenMatchers, T invalid) :
+        m_token(invalid, std::string_view()), TokenMatchers(tokenMatchers), m_input(input) {}
 
 
     // returns the current token.
@@ -76,13 +76,13 @@ public:
     Token<T> Consume()
     {
         if (m_input.length() == 0)
-            throw std::exception("No more tokens");
+            return m_token = Token(m_invalid, "");
 
         int i = 0;
         while (std::isspace(m_input.at(i)))
         {
             if (i == m_input.length() - 1)
-                throw std::exception("No more tokens");
+                return m_token = Token(m_invalid, "");
             i++;
         }
 
@@ -105,4 +105,5 @@ public:
 private:
     std::string_view m_input;
     Token<T> m_token;
+    T m_invalid;
 };

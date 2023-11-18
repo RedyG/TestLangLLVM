@@ -1,14 +1,17 @@
 #pragma once
 #include "Lexer.h"
+#undef EOF;
 
 enum class TokenType {
+    Invalid,
+
     Add,
     Sub,
     Mul,
     Div,
     Equal,
     Dot,
-    Coma,
+    Comma,
     LParen,
     RParen,
     LCurly,

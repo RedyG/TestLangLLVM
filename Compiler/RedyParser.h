@@ -4,13 +4,17 @@
 
 class RedyParser {
 public:
-	std::unique_ptr<ExprAST> Parse(std::string_view input);
+	ExprPtr Parse(std::string_view input);
 
 	RedyParser() : m_lexer(CreateRedyLexer("")) {}
 private:
-	std::unique_ptr<ExprAST> ParseExpr(int precedence);
-	std::unique_ptr<ExprAST> ParseExpr();
-	std::unique_ptr<ExprAST> ParseAtom();
+	ExprPtr ParseDouble();
+	ExprPtr ParsePrimary();
+	ExprPtr ParseArgs(ExprPtr expr);
+	ExprPtr ParsePostfix(ExprPtr expr);
+	ExprPtr ParsePostfix();
+	ExprPtr ParseUnary();
+	ExprPtr ParseExpr(int precedence = 1);
 
 	RedyLexer m_lexer;
 };
