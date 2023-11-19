@@ -15,13 +15,13 @@ Value* BinOpExpr::CodeGen() {
 	auto lhs = LHS->CodeGen();
 	auto rhs = RHS->CodeGen();
 
-	/*switch (Op) {
-		case TokenType::Add: return lhs + rhs;
-		case TokenType::Sub: return lhs - rhs;
-		case TokenType::Mul: return lhs * rhs;
-		case TokenType::Div: return lhs / rhs;
+	switch (Op) {
+		case TokenType::Add: return Builder.CreateFAdd(lhs, rhs, "addtmp");;
+		case TokenType::Sub: return nullptr;
+		case TokenType::Mul: return nullptr;
+		case TokenType::Div: return nullptr;
 		default: throw std::exception("invalid op");
-	}*/
+	}
 	throw std::exception("no binop yet");
 }
 
@@ -59,10 +59,8 @@ Function* ProtoAST::CodeGen() {
 	FunctionType* functionType =
 		FunctionType::get(Type::getDoubleTy(TheContext), types, false);
 
-	// this line causes the following error when the program has finished executing:
-	// A breakpoint instruction (__debugbreak() statement or a similar call) was executed in Compiler.exe
 	Function* function =
-		Function::Create(functionType, Function::ExternalLinkage, Name, TheModule);
+		Function::Create(functionType, Function::ExternalLinkage, Name, *TheModule);
 
 	// Set names for all arguments.
 	unsigned i = 0;
