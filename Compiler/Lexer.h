@@ -102,6 +102,15 @@ public:
 
         throw std::exception("No match found");
     }
+
+    bool ConsumeIf(T type) {
+        if (m_token.Type == type) {
+            Consume();
+            return true;
+        }
+
+        return false;
+    }
 private:
     std::string_view m_input;
     Token<T> m_token;
