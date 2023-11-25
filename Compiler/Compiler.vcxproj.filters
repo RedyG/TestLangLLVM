@@ -24,10 +24,7 @@
     <ClCompile Include="RedyParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AST.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CodeGenerator.cpp">
+    <ClCompile Include="CodeGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,7 +41,7 @@
     <ClInclude Include="AST.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CodeGenerator.h">
+    <ClInclude Include="CodeGen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

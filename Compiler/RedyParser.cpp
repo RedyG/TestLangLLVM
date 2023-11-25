@@ -142,22 +142,22 @@ TypeAST RedyParser::ParseType() {
 	throw std::exception("couldn't parse type");
 }
 
-FuncVisibility RedyParser::ParseFuncVisibility() {
+VisibilityAST RedyParser::ParseFuncVisibility() {
 	if (m_lexer.Current().Type == TokenType::Pub) {
 		m_lexer.Consume();
-		return FuncVisibility::Public;
+		return VisibilityAST::Public;
 	}
-	return FuncVisibility::Private;
+	return VisibilityAST::Private;
 }
 
-std::vector<ParamAST> RedyParser::ParseParams() {
+std::vector<VariableAST> RedyParser::ParseParams() {
 	if (m_lexer.Current().Type == TokenType::LParen) {
 		m_lexer.Consume();
-		std::vector<ParamAST> params {};
+		std::vector<VariableAST> params {};
 
 		if (m_lexer.Current().Type == TokenType::RParen) {
 			m_lexer.Consume();
-			return std::move(params);
+			return params;
 		}
 
 		do {
@@ -167,10 +167,10 @@ std::vector<ParamAST> RedyParser::ParseParams() {
 				m_lexer.Consume();
 				params.emplace_back(type, name);
 			}
-
+			
 			if (m_lexer.Current().Type == TokenType::RParen) {
 				m_lexer.Consume();
-				return std::move(params);
+				return params;
 			}
 		} while (m_lexer.ConsumeIf(TokenType::Comma));
 	}
@@ -199,3 +199,18 @@ FuncAST RedyParser::Parse(std::string_view input) {
 	m_lexer.Consume();
 	return std::move(ParseFunc());
 }
+
+/*
+
+AST {
+	Accept(Visitor visitor);
+}
+
+Expr {
+	Accept(Visitor visitor) => visitor.visitExthis);
+}
+
+ASTVisitor {
+}
+
+*/

@@ -131,15 +131,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AST.cpp" />
-    <ClCompile Include="CodeGenerator.cpp" />
+    <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="RedyParser.cpp" />
     <ClCompile Include="RedyLexer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
-    <ClInclude Include="CodeGenerator.h" />
+    <ClInclude Include="CodeGen.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="RedyParser.h" />
     <ClInclude Include="RedyLexer.h" />

@@ -16,8 +16,8 @@ private:
 	ExprPtr ParseUnary();
 	ExprPtr ParseExpr(int precedence = 1);
 	TypeAST ParseType();
-	FuncVisibility ParseFuncVisibility();
-	std::vector<ParamAST> ParseParams();
+	VisibilityAST ParseFuncVisibility();
+	std::vector<VariableAST> ParseParams();
 	ProtoAST ParseProto();
 	FuncAST ParseFunc();
 

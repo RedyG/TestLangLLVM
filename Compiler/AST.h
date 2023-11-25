@@ -2,7 +2,7 @@
 #include "RedyLexer.h"
 #include <map>
 #pragma warning(disable:4146)
-#include "llvm/IR/IRBuilder.h";
+#include "llvm/IR/IRBuilder.h"
 using namespace llvm;
 
 class ExprAST {
@@ -37,7 +37,6 @@ public:
 	std::string_view Name;
 
 	Value* CodeGen() override;
-
 	VariableExpr(std::string_view name) : Name(name) {}
 };
 
@@ -72,29 +71,29 @@ public:
 	Type* CodeGen();
 };
 
-class ParamAST {
+class VariableAST {
 public:
 	TypeAST Type;
 	std::string_view Name;
 	ExprPtr DefaultValue;
 
-	ParamAST(TypeAST type, std::string_view name, ExprPtr defaultValue = nullptr)
+	VariableAST(TypeAST type, std::string_view name, ExprPtr defaultValue = nullptr)
 		: Type(type), Name(name), DefaultValue(std::move(defaultValue)) {}
 };
 
-enum class FuncVisibility {
+enum class VisibilityAST {
 	Public,
 	Private
 };
 
 class ProtoAST {
 public:
-	FuncVisibility Visibility;
+	VisibilityAST Visibility;
 	TypeAST Type;
 	std::string_view Name;
-	std::vector<ParamAST> Params;
+	std::vector<VariableAST> Params;
 
-	ProtoAST(FuncVisibility visibility, TypeAST type, std::string_view name, std::vector<ParamAST> params)
+	ProtoAST(VisibilityAST visibility, TypeAST type, std::string_view name, std::vector<VariableAST> params)
 		: Visibility(visibility), Type(type), Name(name), Params(std::move(params)) {}
 
 	Function* CodeGen();
@@ -109,4 +108,30 @@ public:
 	FuncAST(ProtoAST proto, ExprPtr body) : Proto(std::move(proto)), Body(std::move(body)) {}
 
 	Function* CodeGen();
+};
+
+enum class SetterVisiblityAST {
+	Public,
+	Init,
+	Private,
+};
+
+class FieldAST {
+public:
+	VisibilityAST GetterVisibility;
+	SetterVisiblityAST SetterVisibility;
+	VariableAST Variable;
+
+	FieldAST(VisibilityAST getterVisibility, SetterVisiblityAST setterVisibility, VariableAST variable)
+		: GetterVisibility(getterVisibility), SetterVisibility(setterVisibility), Variable(std::move(variable)) {}
+};
+
+class ClassAST {
+public:
+	VisibilityAST Visibility;
+	std::string_view Name;
+	std::vector<FieldAST> Fields;
+	
+	ClassAST(VisibilityAST visibility, std::string_view name, std::vector<FieldAST> fields)
+		: Visibility(visibility), Name(name), Fields(std::move(fields)) {}
 };
