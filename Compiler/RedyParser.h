@@ -20,6 +20,7 @@ private:
 	std::vector<VariableAST> ParseParams();
 	ProtoAST ParseProto();
 	FuncAST ParseFunc();
+	StructAST ParseStruct();
 
 	RedyLexer m_lexer;
 };

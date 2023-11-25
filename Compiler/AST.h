@@ -126,12 +126,12 @@ public:
 		: GetterVisibility(getterVisibility), SetterVisibility(setterVisibility), Variable(std::move(variable)) {}
 };
 
-class ClassAST {
+class StructAST {
 public:
 	VisibilityAST Visibility;
 	std::string_view Name;
 	std::vector<FieldAST> Fields;
 	
-	ClassAST(VisibilityAST visibility, std::string_view name, std::vector<FieldAST> fields)
+	StructAST(VisibilityAST visibility, std::string_view name, std::vector<FieldAST> fields)
 		: Visibility(visibility), Name(name), Fields(std::move(fields)) {}
 };

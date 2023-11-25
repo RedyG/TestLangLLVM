@@ -18,7 +18,7 @@ enum class TokenType {
     RCurly,
 
     Pub,
-    Class,
+    Struct,
 
     Identifier,
     Double

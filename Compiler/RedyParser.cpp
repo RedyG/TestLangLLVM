@@ -60,11 +60,9 @@ ExprPtr RedyParser::ParsePrimary() {
 		m_lexer.Consume();
 		return std::make_unique<VariableExpr>(name);
 	}
-	else if (m_lexer.Current().Type == TokenType::LParen) {
-		m_lexer.Consume();
+	else if (m_lexer.ConsumeIf(TokenType::LParen)) {
 		auto expr = ParseExpr();
-		if (m_lexer.Current().Type == TokenType::RParen) {
-			m_lexer.Consume();
+		if (m_lexer.ConsumeIf(TokenType::RParen)) {
 			return std::move(expr);
 		}
 	}
@@ -76,16 +74,14 @@ ExprPtr RedyParser::ParseArgs(ExprPtr expr) {
 	m_lexer.Consume();
 	std::vector<ExprPtr> params {};
 
-	if (m_lexer.Current().Type == TokenType::RParen) {
-		m_lexer.Consume();
+	if (m_lexer.ConsumeIf(TokenType::RParen)){
 		return std::make_unique<CallExpr>(std::move(expr), std::move(params));
 	}
 
 	do {
 		params.push_back(std::move(ParseExpr()));
 
-		if (m_lexer.Current().Type == TokenType::RParen) {
-			m_lexer.Consume();
+		if (m_lexer.ConsumeIf(TokenType::RParen)) {
 			return std::make_unique<CallExpr>(std::move(expr), std::move(params));
 		}
 	} while (m_lexer.ConsumeIf(TokenType::Comma));
@@ -143,20 +139,17 @@ TypeAST RedyParser::ParseType() {
 }
 
 VisibilityAST RedyParser::ParseFuncVisibility() {
-	if (m_lexer.Current().Type == TokenType::Pub) {
-		m_lexer.Consume();
+	if (m_lexer.ConsumeIf(TokenType::Pub)) {
 		return VisibilityAST::Public;
 	}
 	return VisibilityAST::Private;
 }
 
 std::vector<VariableAST> RedyParser::ParseParams() {
-	if (m_lexer.Current().Type == TokenType::LParen) {
-		m_lexer.Consume();
+	if (m_lexer.ConsumeIf(TokenType::LParen)) {
 		std::vector<VariableAST> params {};
 
-		if (m_lexer.Current().Type == TokenType::RParen) {
-			m_lexer.Consume();
+		if (m_lexer.ConsumeIf(TokenType::RParen)) {
 			return params;
 		}
 
@@ -168,8 +161,7 @@ std::vector<VariableAST> RedyParser::ParseParams() {
 				params.emplace_back(type, name);
 			}
 			
-			if (m_lexer.Current().Type == TokenType::RParen) {
-				m_lexer.Consume();
+			if (m_lexer.ConsumeIf(TokenType::RParen)) {
 				return params;
 			}
 		} while (m_lexer.ConsumeIf(TokenType::Comma));
@@ -192,6 +184,12 @@ FuncAST RedyParser::ParseFunc() {
 	auto proto = ParseProto();
 	auto expr = ParseExpr();
 	return std::move(FuncAST(std::move(proto), std::move(expr)));
+}
+
+StructAST RedyParser::ParseStruct() {
+	if (m_lexer.ConsumeIf(TokenType::Struct)) {}
+
+	return ParseStruct();
 }
 
 FuncAST RedyParser::Parse(std::string_view input) {
