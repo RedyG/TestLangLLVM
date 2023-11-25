@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 
+
 std::string EraseChar(std::string_view str, char c) {
 	std::string result;
 	for (size_t i = 0; i < str.size(); i++)
@@ -138,7 +139,7 @@ TypeAST RedyParser::ParseType() {
 	throw std::exception("couldn't parse type");
 }
 
-VisibilityAST RedyParser::ParseFuncVisibility() {
+VisibilityAST RedyParser::ParseVisibility() {
 	if (m_lexer.ConsumeIf(TokenType::Pub)) {
 		return VisibilityAST::Public;
 	}
@@ -146,56 +147,88 @@ VisibilityAST RedyParser::ParseFuncVisibility() {
 }
 
 std::vector<VariableAST> RedyParser::ParseParams() {
-	if (m_lexer.ConsumeIf(TokenType::LParen)) {
-		std::vector<VariableAST> params {};
+	std::vector<VariableAST> params {};
 
+	if (m_lexer.ConsumeIf(TokenType::RParen)) {
+		return params;
+	}
+
+	do {
+		auto type = ParseType();
+		if (m_lexer.Current().Type == TokenType::Identifier) {
+			auto name = m_lexer.Current().Content;
+			m_lexer.Consume();
+			params.emplace_back(type, name);
+		}
+		
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
 			return params;
 		}
+	} while (m_lexer.ConsumeIf(TokenType::Comma));
 
-		do {
-			auto type = ParseType();
-			if (m_lexer.Current().Type == TokenType::Identifier) {
-				auto name = m_lexer.Current().Content;
-				m_lexer.Consume();
-				params.emplace_back(type, name);
+	throw std::exception("couldn't parse params");
+}
+
+void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST>& funcs, std::vector<ProtoAST>& protos) {
+	while (true) {
+
+		if (m_lexer.ConsumeIf(TokenType::RCurly))
+			return;
+
+		auto visibility = ParseVisibility();
+		auto type = ParseType();
+		if (m_lexer.Current().Type == TokenType::Identifier) {
+			auto name = m_lexer.Current().Content;
+			m_lexer.Consume();
+			if (m_lexer.ConsumeIf(TokenType::LParen)) {
+				auto params = ParseParams();
+				auto proto = ProtoAST(visibility, type, name, std::move(params));
+				if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+					protos.push_back(std::move(proto));
+				}
+				else {
+					auto body = ParseExpr();
+					if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+						funcs.emplace_back(std::move(proto), std::move(body));
+					}
+				}
 			}
-			
-			if (m_lexer.ConsumeIf(TokenType::RParen)) {
-				return params;
+			else if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+				fields.emplace_back(visibility, VariableAST(type, name));
 			}
-		} while (m_lexer.ConsumeIf(TokenType::Comma));
+		}
 	}
 }
 
-ProtoAST RedyParser::ParseProto() {
-	auto visibility = ParseFuncVisibility();
-	auto type = ParseType();
-	std::string_view name {};
-	if (m_lexer.Current().Type == TokenType::Identifier) {
-		name = m_lexer.Current().Content;
-		m_lexer.Consume();
-	}
-	auto params = ParseParams();
-	return std::move(ProtoAST(visibility, type, name, std::move(params)));
-}
-
-FuncAST RedyParser::ParseFunc() {
-	auto proto = ParseProto();
-	auto expr = ParseExpr();
-	return std::move(FuncAST(std::move(proto), std::move(expr)));
-}
+std::vector<ProtoAST> protos;
 
 StructAST RedyParser::ParseStruct() {
-	if (m_lexer.ConsumeIf(TokenType::Struct)) {}
+	auto visibility = ParseVisibility();
+	if (m_lexer.ConsumeIf(TokenType::Struct)) {
+		if (m_lexer.Current().Type == TokenType::Identifier) {
+			auto name = m_lexer.Current().Content;;
+			m_lexer.Consume();
+			if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+				std::vector<FieldAST> fields;
+				std::vector<FuncAST> methods;
+				ParseMembers(fields, methods, protos);
+				if (protos.size() != 0) {
+					protos.clear();
+					throw std::exception("Struct methods should have a body.");
+				}
 
-	return ParseStruct();
+				return StructAST(visibility, name, std::move(fields), std::move(methods));	
+			}
+		}
+	}
+
+	throw std::exception("invalid struct definition");
 }
 
-FuncAST RedyParser::Parse(std::string_view input) {
+StructAST RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
-	return std::move(ParseFunc());
+	return std::move(ParseStruct());
 }
 
 /*

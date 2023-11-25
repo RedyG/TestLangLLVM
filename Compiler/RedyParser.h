@@ -4,7 +4,7 @@
 
 class RedyParser {
 public:
-	FuncAST Parse(std::string_view input);
+	StructAST Parse(std::string_view input);
 
 	RedyParser() : m_lexer(CreateRedyLexer("")) {}
 private:
@@ -16,10 +16,9 @@ private:
 	ExprPtr ParseUnary();
 	ExprPtr ParseExpr(int precedence = 1);
 	TypeAST ParseType();
-	VisibilityAST ParseFuncVisibility();
+	VisibilityAST ParseVisibility();
 	std::vector<VariableAST> ParseParams();
-	ProtoAST ParseProto();
-	FuncAST ParseFunc();
+	void ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST>& funcs, std::vector<ProtoAST>& protos);
 	StructAST ParseStruct();
 
 	RedyLexer m_lexer;

@@ -9,9 +9,12 @@ enum class TokenType {
     Sub,
     Mul,
     Div,
+
     Equal,
     Dot,
+    SemiColon,
     Comma,
+
     LParen,
     RParen,
     LCurly,

@@ -60,6 +60,7 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 		TokenMatcher<TokenType>(TokenType::Div, [](std::string_view input) -> MatchResult { return MatchChar(input, '/'); }),
 		TokenMatcher<TokenType>(TokenType::Equal, [](std::string_view input) -> MatchResult { return MatchChar(input, '='); }),
 		TokenMatcher<TokenType>(TokenType::Dot, [](std::string_view input) -> MatchResult { return MatchChar(input, '.'); }),
+		TokenMatcher<TokenType>(TokenType::SemiColon, [](std::string_view input) -> MatchResult { return MatchChar(input, ';'); }),
 		TokenMatcher<TokenType>(TokenType::Comma, [](std::string_view input) -> MatchResult { return MatchChar(input, ','); }),
 		TokenMatcher<TokenType>(TokenType::LParen, [](std::string_view input) -> MatchResult { return MatchChar(input, '('); }),
 		TokenMatcher<TokenType>(TokenType::RParen, [](std::string_view input) -> MatchResult { return MatchChar(input, ')'); }),

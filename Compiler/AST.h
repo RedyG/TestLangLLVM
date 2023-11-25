@@ -1,5 +1,6 @@
 #pragma once
 #include "RedyLexer.h"
+#include <variant>
 #include <map>
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
@@ -110,20 +111,15 @@ public:
 	Function* CodeGen();
 };
 
-enum class SetterVisiblityAST {
-	Public,
-	Init,
-	Private,
-};
 
+// TODO: add other visiblites like pub(get) and pub(set)
 class FieldAST {
 public:
-	VisibilityAST GetterVisibility;
-	SetterVisiblityAST SetterVisibility;
+	VisibilityAST Visibility;
 	VariableAST Variable;
 
-	FieldAST(VisibilityAST getterVisibility, SetterVisiblityAST setterVisibility, VariableAST variable)
-		: GetterVisibility(getterVisibility), SetterVisibility(setterVisibility), Variable(std::move(variable)) {}
+	FieldAST(VisibilityAST visibility, VariableAST variable)
+		: Visibility(visibility), Variable(std::move(variable)) {}
 };
 
 class StructAST {
@@ -131,7 +127,8 @@ public:
 	VisibilityAST Visibility;
 	std::string_view Name;
 	std::vector<FieldAST> Fields;
+	std::vector<FuncAST> Methods;
 	
-	StructAST(VisibilityAST visibility, std::string_view name, std::vector<FieldAST> fields)
-		: Visibility(visibility), Name(name), Fields(std::move(fields)) {}
+	StructAST(VisibilityAST visibility, std::string_view name, std::vector<FieldAST> fields, std::vector<FuncAST> methods)
+		: Visibility(visibility), Name(name), Fields(std::move(fields)), Methods(std::move(methods)) {}
 };
