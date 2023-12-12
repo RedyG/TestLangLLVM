@@ -133,15 +133,20 @@
   <ItemGroup>
     <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="Compiler.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="RedyParser.cpp" />
     <ClCompile Include="RedyLexer.cpp" />
+    <ClCompile Include="TypeCheck.cpp" />
+    <ClCompile Include="TypeTable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
     <ClInclude Include="CodeGen.h" />
     <ClInclude Include="Lexer.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="RedyParser.h" />
     <ClInclude Include="RedyLexer.h" />
+    <ClInclude Include="TypeTable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

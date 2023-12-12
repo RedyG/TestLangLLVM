@@ -216,8 +216,7 @@ StructAST RedyParser::ParseStruct() {
 					protos.clear();
 					throw std::exception("Struct methods should have a body.");
 				}
-
-				return StructAST(visibility, name, std::move(fields), std::move(methods));	
+				return StructAST(std::move(fields), TypeDeclAST(visibility, name, std::move(methods)));
 			}
 		}
 	}
@@ -225,10 +224,17 @@ StructAST RedyParser::ParseStruct() {
 	throw std::exception("invalid struct definition");
 }
 
-StructAST RedyParser::Parse(std::string_view input) {
+ModuleAST RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
-	return std::move(ParseStruct());
+
+	std::vector<StructAST> structs;
+
+	do {
+		structs.push_back(ParseStruct());
+	} while (m_lexer.Current().Type != TokenType::Invalid);
+
+	return std::move(ModuleAST(std::move(structs)));
 }
 
 /*

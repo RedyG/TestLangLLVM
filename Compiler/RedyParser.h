@@ -4,7 +4,7 @@
 
 class RedyParser {
 public:
-	StructAST Parse(std::string_view input);
+	ModuleAST Parse(std::string_view input);
 
 	RedyParser() : m_lexer(CreateRedyLexer("")) {}
 private:

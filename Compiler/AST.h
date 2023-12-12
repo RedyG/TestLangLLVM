@@ -6,9 +6,20 @@
 #include "llvm/IR/IRBuilder.h"
 using namespace llvm;
 
+class TypeDeclAST;
+
 class ExprAST {
 public:
+	TypeDeclAST* Type;
+
 	virtual Value* CodeGen() = 0;
+	TypeDeclAST* TypeCheck() {
+		Type = OnTypeCheck();
+		return Type;
+	}
+
+private:
+	virtual TypeDeclAST* OnTypeCheck() = 0;
 };
 
 using ExprPtr = std::unique_ptr<ExprAST>;
@@ -20,6 +31,9 @@ public:
 	llvm::Value* CodeGen() override;
 
 	DoubleExpr(double value) : Value(value) {}
+
+private:
+	TypeDeclAST* OnTypeCheck() override;
 };
 
 class BinOpExpr : public ExprAST {
@@ -31,37 +45,10 @@ public:
 	Value* CodeGen() override;
 
 	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
+
+private:
+	TypeDeclAST* OnTypeCheck() override;
 };
-
-class VariableExpr : public ExprAST {
-public:
-	std::string_view Name;
-
-	Value* CodeGen() override;
-	VariableExpr(std::string_view name) : Name(name) {}
-};
-
-class CallExpr : public ExprAST {
-public:
-	ExprPtr Callee;
-	std::vector<ExprPtr> Params;
-
-	Value* CodeGen() override;
-
-	CallExpr(ExprPtr callee, std::vector<ExprPtr> params)
-		: Callee(std::move(callee)), Params(std::move(params)) {}
-};
-
-class UnaryExpr : public ExprAST {
-public:
-	TokenType Op;
-	ExprPtr Expr;
-
-	Value* CodeGen() override;
-
-	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
-};
-
 
 class TypeAST {
 public:
@@ -70,6 +57,14 @@ public:
 	TypeAST(std::string_view name) : Name(name) {}
 
 	Type* CodeGen();
+};
+
+struct TypeASTComparer
+{
+	bool operator() (const TypeAST& lhs, const TypeAST& rhs) const
+	{
+		return lhs.Name < rhs.Name;
+	}
 };
 
 class VariableAST {
@@ -81,6 +76,48 @@ public:
 	VariableAST(TypeAST type, std::string_view name, ExprPtr defaultValue = nullptr)
 		: Type(type), Name(name), DefaultValue(std::move(defaultValue)) {}
 };
+
+
+class VariableExpr : public ExprAST {
+public:
+	VariableAST* Symbol;
+	std::string_view Name;
+
+	Value* CodeGen() override;
+
+	VariableExpr(std::string_view name) : Name(name) {}
+
+private:
+	TypeDeclAST* OnTypeCheck() override;
+};
+
+class CallExpr : public ExprAST {
+public:
+	ExprPtr Callee;
+	std::vector<ExprPtr> Params;
+
+	Value* CodeGen() override;
+
+	CallExpr(ExprPtr callee, std::vector<ExprPtr> params)
+		: Callee(std::move(callee)), Params(std::move(params)) {}
+
+private:
+	TypeDeclAST* OnTypeCheck() override;
+};
+
+class UnaryExpr : public ExprAST {
+public:
+	TokenType Op;
+	ExprPtr Expr;
+
+	Value* CodeGen() override;
+
+	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
+
+private:
+	TypeDeclAST* OnTypeCheck() override;
+};
+
 
 enum class VisibilityAST {
 	Public,
@@ -108,9 +145,24 @@ public:
 
 	FuncAST(ProtoAST proto, ExprPtr body) : Proto(std::move(proto)), Body(std::move(body)) {}
 
+	void TypeCheck();
 	Function* CodeGen();
 };
 
+class StatementAST {
+	virtual void TypeCheck() = 0;
+	virtual void CodeGen() = 0;
+};
+
+class VariableDeclaration : public StatementAST {
+public:
+	VariableAST Variable;
+
+	void TypeCheck() override;
+	void CodeGen() override;
+
+	VariableDeclaration(VariableAST variable) : Variable(std::move(variable)) {}
+};
 
 // TODO: add other visiblites like pub(get) and pub(set)
 class FieldAST {
@@ -122,13 +174,34 @@ public:
 		: Visibility(visibility), Variable(std::move(variable)) {}
 };
 
-class StructAST {
+class TypeDeclAST {
 public:
 	VisibilityAST Visibility;
 	std::string_view Name;
-	std::vector<FieldAST> Fields;
 	std::vector<FuncAST> Methods;
+
+	TypeDeclAST(VisibilityAST visibility, std::string_view name, std::vector<FuncAST> methods)
+		: Visibility(visibility), Name(name), Methods(std::move(methods)) {}
+};
+
+class StructAST {
+public:
+	TypeDeclAST TypeDecl;
+	std::vector<FieldAST> Fields;
 	
-	StructAST(VisibilityAST visibility, std::string_view name, std::vector<FieldAST> fields, std::vector<FuncAST> methods)
-		: Visibility(visibility), Name(name), Fields(std::move(fields)), Methods(std::move(methods)) {}
+	void TypeCheck();
+	void CodeGen();
+
+	StructAST(std::vector<FieldAST> fields, TypeDeclAST typeDecl)
+		: Fields(std::move(fields)), TypeDecl(std::move(typeDecl)) {}
+};
+
+class ModuleAST {
+public:
+	std::vector<StructAST> Structs;
+
+	void TypeCheck();
+	void CodeGen();
+
+	ModuleAST(std::vector<StructAST> structs) : Structs(std::move(structs)) {}
 };

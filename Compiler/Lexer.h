@@ -64,7 +64,7 @@ public:
     std::vector<TokenMatcher<T>>* TokenMatchers;
 
     Lexer(std::string_view input, std::vector<TokenMatcher<T>>* tokenMatchers, T invalid) :
-        m_token(invalid, std::string_view()), TokenMatchers(tokenMatchers), m_input(input) {}
+        m_token(invalid, std::string_view()), TokenMatchers(tokenMatchers), m_input(input), m_invalid(invalid) {}
 
 
     // returns the current token.
@@ -100,7 +100,7 @@ public:
             }
         }
 
-        throw std::exception("No match found");
+        throw std::exception("couldn't parse token");
     }
 
     bool ConsumeIf(T type) {

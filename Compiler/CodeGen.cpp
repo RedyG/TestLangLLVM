@@ -1,4 +1,5 @@
 #include "AST.h"
+#include "TypeTable.h"
 #include <llvm/IR/Verifier.h>
 
 LLVMContext TheContext;
@@ -18,6 +19,7 @@ Value* DoubleExpr::CodeGen() {
 	std::cout << "inside double\n";
 	return ConstantFP::get(TheContext, APFloat(Value));
 }
+
 Value* BinOpExpr::CodeGen() {
 	std::cout << "inside BinOp " << (int)Op << '\n';
 	auto lhs = LHS->CodeGen();
@@ -31,22 +33,27 @@ Value* BinOpExpr::CodeGen() {
 	}
 	throw std::exception("no binop yet");
 }
+
 Value* VariableExpr::CodeGen() {
 	std::cout << "inside Variable\n";
 	return NamedValues[Name];
 }
+
 Value* CallExpr::CodeGen() {
 	std::cout << "inside Call\n";
 	return Callee->CodeGen();
 	//throw std::exception("no call yet");
 }
+
 Value* UnaryExpr::CodeGen() {
 	std::cout << "inside Unary\n";
 	return Expr->CodeGen();
 }
+
 Type* TypeAST::CodeGen() {
 	return Type::getDoubleTy(TheContext);
 }
+
 Function* ProtoAST::CodeGen() {
 	std::vector<llvm::Type*> types;
 	types.reserve(Params.size());
@@ -63,6 +70,7 @@ Function* ProtoAST::CodeGen() {
 		Arg.setName(Params[i++].Name);
 	return function;
 }
+
 Function* FuncAST::CodeGen() {
 	Function* TheFunction = TheModule->getFunction(Proto.Name);
 	if (!TheFunction)
@@ -86,4 +94,23 @@ Function* FuncAST::CodeGen() {
 	// Error reading body, remove function.
 	TheFunction->eraseFromParent();
 	return nullptr;
+}
+
+void StructAST::CodeGen() {
+	std::vector<Type*> types;
+	for (auto& field : Fields) {
+		types.push_back(field.Variable.Type.CodeGen());
+	}
+
+	auto type = StructType::create(types, TypeDecl.Name);
+
+	for (auto& method : TypeDecl.Methods) {
+		method.CodeGen();
+	}
+}
+
+void ModuleAST::CodeGen() {
+	for (auto& structAST : Structs) {
+		structAST.CodeGen();
+	}
 }

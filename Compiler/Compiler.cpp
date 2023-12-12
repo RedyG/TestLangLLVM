@@ -1,23 +1,33 @@
 #include <iostream>
 #include "RedyParser.h"
 #include "CodeGen.h"
+#include "TypeTable.h"
 
 void main() {
 	InitModule();
+	try {
+		RedyParser parser;
+		auto defaultTypes = parser.Parse(R"(
+			pub struct double {}
+			pub struct bool {} 
+		)");
 
-	//std::cout << sizeof(std::variant<FieldAST, FuncAST, ProtoAST>) << std::endl;
-	//std::cout << sizeof(FieldAST) << std::endl;
-	//std::cout << sizeof(FuncAST) << std::endl;
-	//std::cout << sizeof(ProtoAST) << std::endl;
+		auto module = parser.Parse(R"(
+			pub struct TestStruct {
+				pub double TestFunc() 2.0;
+				pub string SomeField;
+				double comFunc(bool arg2, double secondd) arg2 + arg2;
+			} 
+		)");
 
-	RedyParser parser;
-	auto myStruct = parser.Parse(R"(
-struct TestStruct {
-	pub int TestFunc() 2.0;
-	pub string SomeField;
-	Type comFunc(int arg2, string secondd) 2.0 + 20.2();
-})");
-	//auto func = res.CodeGen();
-
-	DumpIr();
-} 
+		TypeTable::AddModuleTypes(defaultTypes);
+		TypeTable::AddModuleTypes(module);
+		module.TypeCheck();
+		module.CodeGen();
+		DumpIr();
+	}
+	catch (const std::exception& e) {
+		std::cerr << e.what() << std::endl;
+		throw;
+	}
+}
