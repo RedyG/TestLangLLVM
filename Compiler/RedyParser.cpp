@@ -169,6 +169,16 @@ std::vector<VariableAST> RedyParser::ParseParams() {
 	throw std::exception("couldn't parse params");
 }
 
+template<typename T, typename S>
+std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
+{
+	auto converted = std::unique_ptr<T>{ dynamic_cast<T*>(p.get()) };
+	if (converted) {
+		p.release();            // no longer owns the pointer
+	}
+	return converted;
+}
+
 void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST>& funcs, std::vector<ProtoAST>& protos) {
 	while (true) {
 
@@ -185,15 +195,21 @@ void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST
 				auto proto = ProtoAST(visibility, type, name, std::move(params));
 				if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
 					protos.push_back(std::move(proto));
-				}
-				else {
-					auto body = ParseExpr();
-					if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-						funcs.emplace_back(std::move(proto), std::move(body));
+				} else {
+					if (m_lexer.ConsumeIf(TokenType::Arrow)) {
+						auto body = ParseExpr();
+						if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+							funcs.emplace_back(std::move(proto), std::move(body));
+						}
+					} else {
+						auto statement = ParseStatement();
+						auto block = dynamic_pointer_cast<BlockStatement, StatementAST>(std::move(statement));
+						if (block) {
+							funcs.emplace_back(std::move(proto), std::move(block));
+						}
 					}
 				}
-			}
-			else if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+			} else if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
 				fields.emplace_back(visibility, VariableAST(type, name));
 			}
 		}
@@ -224,12 +240,32 @@ StructAST RedyParser::ParseStruct() {
 	throw std::exception("invalid struct definition");
 }
 
+StatementPtr RedyParser::ParseStatement() {
+	if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+		std::vector<StatementPtr> statements;
+		while (m_lexer.Current().Type != TokenType::RCurly) {
+			statements.push_back(std::move(ParseStatement()));
+		}
+		m_lexer.Consume();
+		return std::make_unique<BlockStatement>(std::move(statements));
+	}
+
+	if (m_lexer.ConsumeIf(TokenType::Return)) {
+		auto expr = ParseExpr();
+		if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+			return std::make_unique<ReturnStatement>(std::move(expr));
+		}
+	}
+
+	throw std::exception("Invalid statement");
+}
+
 ModuleAST RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
 
 	std::vector<StructAST> structs;
-
+	
 	do {
 		structs.push_back(ParseStruct());
 	} while (m_lexer.Current().Type != TokenType::Invalid);

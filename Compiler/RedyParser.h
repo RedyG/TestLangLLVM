@@ -15,6 +15,8 @@ private:
 	ExprPtr ParsePostfix();
 	ExprPtr ParseUnary();
 	ExprPtr ParseExpr(int precedence = 1);
+	StatementPtr ParseStatementOrExpr();
+	StatementPtr ParseStatement();
 	TypeAST ParseType();
 	VisibilityAST ParseVisibility();
 	std::vector<VariableAST> ParseParams();

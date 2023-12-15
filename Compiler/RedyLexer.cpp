@@ -16,6 +16,13 @@ MatchResult MatchChar(std::string_view input, char c) {
 	return MatchResult();
 }
 
+MatchResult MatchString(std::string_view input, std::string_view string) {
+	if (input.starts_with(string))
+		return MatchResult(true, 2);
+
+	return MatchResult();
+}
+
 MatchResult MatchIdentifier(std::string_view input) {
 	if (!std::isalpha(input[0]) && input[0] != '_')
 		return MatchResult();
@@ -58,6 +65,7 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 		TokenMatcher<TokenType>(TokenType::Sub, [](std::string_view input) -> MatchResult { return MatchChar(input, '-'); }),
 		TokenMatcher<TokenType>(TokenType::Mul, [](std::string_view input) -> MatchResult { return MatchChar(input, '*'); }),
 		TokenMatcher<TokenType>(TokenType::Div, [](std::string_view input) -> MatchResult { return MatchChar(input, '/'); }),
+		TokenMatcher<TokenType>(TokenType::Arrow, [](std::string_view input) -> MatchResult { return MatchString(input, "=>"); }),
 		TokenMatcher<TokenType>(TokenType::Equal, [](std::string_view input) -> MatchResult { return MatchChar(input, '='); }),
 		TokenMatcher<TokenType>(TokenType::Dot, [](std::string_view input) -> MatchResult { return MatchChar(input, '.'); }),
 		TokenMatcher<TokenType>(TokenType::SemiColon, [](std::string_view input) -> MatchResult { return MatchChar(input, ';'); }),
@@ -68,6 +76,7 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 		TokenMatcher<TokenType>(TokenType::RCurly, [](std::string_view input) -> MatchResult { return MatchChar(input, '}'); }),
 		TokenMatcher<TokenType>(TokenType::Pub, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "pub"); }),
 		TokenMatcher<TokenType>(TokenType::Struct, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "struct"); }),
+		TokenMatcher<TokenType>(TokenType::Return, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "return"); }),
 		TokenMatcher<TokenType>(TokenType::Identifier, MatchIdentifier),
 		TokenMatcher<TokenType>(TokenType::Double, MatchDouble),
 };

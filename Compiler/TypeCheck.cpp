@@ -8,6 +8,7 @@
 
 std::vector<VariableAST*> symbols;
 std::stack<int> symbolsCount;
+TypeDeclAST* ReturnType;
 
 VariableAST* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
@@ -21,7 +22,7 @@ VariableAST* FindSymbol(std::string_view name) {
 }
 
 TypeDeclAST* DoubleExpr::OnTypeCheck() {
-	return TypeTable::GetTypeDecl(TypeAST("double"));
+	return TypeTable::GetTypeDecl(TypeAST("f64"));
 }
 
 std::string_view GetOpName(TokenType op) {
@@ -72,24 +73,27 @@ TypeDeclAST* UnaryExpr::OnTypeCheck() {
 }
 
 void FuncAST::TypeCheck() {
+	ReturnType = TypeTable::GetTypeDecl(Proto.Type);
+
 	for (auto& symbol : Proto.Params) {
 		symbols.push_back(&symbol);
 	}
 
-	auto bodyType = Body->TypeCheck();
+	if (std::holds_alternative<ExprPtr>(Body)) {
+		auto& expr = std::get<ExprPtr>(Body);
+		auto bodyType = expr->TypeCheck();
+
+		if (bodyType == nullptr)
+			return;
+
+		if (bodyType != ReturnType)
+			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, bodyType->Name));
+	} else {
+		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
+		block->TypeCheck();
+	}
 
 	symbols.resize(symbols.size() - Proto.Params.size());
-
-	auto returnType = TypeTable::GetTypeDecl(Proto.Type);
-
-	if (bodyType == nullptr || returnType == nullptr) {
-		return;
-	}
-
-	if (bodyType != returnType) {
-		Logger::Error(std::format("Expected type {0} and got type {1}", returnType->Name, bodyType->Name));
-	}
-
 }
 
 void StructAST::TypeCheck() {
@@ -104,7 +108,27 @@ void ModuleAST::TypeCheck() {
 	}
 }
 
-void VariableDeclaration::TypeCheck() {
+void VariableDeclStatement::TypeCheck() {
 	symbols.push_back(&Variable);
 	symbolsCount.top()++;
+}
+
+void BlockStatement::TypeCheck() {
+	symbolsCount.push(0);
+
+	for (auto& statement : Statements) {
+		statement->TypeCheck();
+	}
+
+	symbols.resize(symbols.size() - symbolsCount.top());
+	symbolsCount.pop();
+}
+
+void ReturnStatement::TypeCheck() {
+	auto exprType = Expr->TypeCheck();
+	if (exprType == nullptr)
+		return;
+
+	if (exprType != ReturnType)
+		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, exprType->Name));
 }

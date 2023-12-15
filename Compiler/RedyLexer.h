@@ -10,6 +10,7 @@ enum class TokenType {
     Mul,
     Div,
 
+    Arrow,
     Equal,
     Dot,
     SemiColon,
@@ -22,6 +23,7 @@ enum class TokenType {
 
     Pub,
     Struct,
+    Return,
 
     Identifier,
     Double

@@ -12,6 +12,8 @@ class ExprAST {
 public:
 	TypeDeclAST* Type;
 
+	// not using the visitor pattern because every passes return different types
+	// so I would have to deal with std::any or something
 	virtual Value* CodeGen() = 0;
 	TypeDeclAST* TypeCheck() {
 		Type = OnTypeCheck();
@@ -138,30 +140,55 @@ public:
 
 };
 
+class StatementAST {
+public:
+	virtual void TypeCheck() = 0;
+	virtual void CodeGen() = 0;
+};
+
+using StatementPtr = std::unique_ptr<StatementAST>;
+
+class BlockStatement : public StatementAST {
+public:
+	std::vector<StatementPtr> Statements;
+
+	void TypeCheck() override;
+	void CodeGen() override;
+
+	BlockStatement(std::vector<StatementPtr> statements) : Statements(std::move(statements)) {}
+};
+
+class ReturnStatement : public StatementAST {
+public:
+	ExprPtr Expr;
+
+	void TypeCheck() override;
+	void CodeGen() override;
+
+	ReturnStatement(ExprPtr expr) : Expr(std::move(expr)) {}
+};
+
+using BlockOrExpr = std::variant<ExprPtr, std::unique_ptr<BlockStatement>>;
+
 class FuncAST {
 public:
 	ProtoAST Proto;
-	ExprPtr Body;
+	BlockOrExpr Body;
 
-	FuncAST(ProtoAST proto, ExprPtr body) : Proto(std::move(proto)), Body(std::move(body)) {}
+	FuncAST(ProtoAST proto, BlockOrExpr body) : Proto(std::move(proto)), Body(std::move(body)) {}
 
 	void TypeCheck();
 	Function* CodeGen();
 };
 
-class StatementAST {
-	virtual void TypeCheck() = 0;
-	virtual void CodeGen() = 0;
-};
-
-class VariableDeclaration : public StatementAST {
+class VariableDeclStatement: public StatementAST {
 public:
 	VariableAST Variable;
 
 	void TypeCheck() override;
 	void CodeGen() override;
 
-	VariableDeclaration(VariableAST variable) : Variable(std::move(variable)) {}
+	VariableDeclStatement(VariableAST variable) : Variable(std::move(variable)) {}
 };
 
 // TODO: add other visiblites like pub(get) and pub(set)

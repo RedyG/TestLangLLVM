@@ -8,15 +8,17 @@ void main() {
 	try {
 		RedyParser parser;
 		auto defaultTypes = parser.Parse(R"(
-			pub struct double {}
+			pub struct f64 {}
 			pub struct bool {} 
 		)");
 
 		auto module = parser.Parse(R"(
 			pub struct TestStruct {
-				pub double TestFunc() 2.0;
-				pub string SomeField;
-				double comFunc(bool arg2, double secondd) arg2 + arg2;
+				pub f64 TestFunc() => 2.0;
+				pub f64 SomeField;
+				f64 comFunc(bool arg2, f64 secondd) {
+					return secondd + secondd;
+				}
 			} 
 		)");
 

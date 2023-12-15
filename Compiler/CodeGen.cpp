@@ -6,6 +6,7 @@ LLVMContext TheContext;
 IRBuilder<> Builder(TheContext);
 std::unique_ptr<Module> TheModule;
 std::map<std::string_view, Value*> NamedValues;
+Function* CurrentFunc;
 
 void InitModule() {
 	TheModule = std::make_unique<Module>("Test", TheContext);
@@ -51,7 +52,14 @@ Value* UnaryExpr::CodeGen() {
 }
 
 Type* TypeAST::CodeGen() {
-	return Type::getDoubleTy(TheContext);
+	if (Name == "f64") {
+		return Type::getDoubleTy(TheContext);
+	}
+	if (Name == "bool") {
+		return Type::getInt1Ty(TheContext);
+	}
+
+	throw std::exception("invalid type");
 }
 
 Function* ProtoAST::CodeGen() {
@@ -71,29 +79,46 @@ Function* ProtoAST::CodeGen() {
 	return function;
 }
 
-Function* FuncAST::CodeGen() {
-	Function* TheFunction = TheModule->getFunction(Proto.Name);
-	if (!TheFunction)
-		TheFunction = Proto.CodeGen();
-	if (!TheFunction)
-		return nullptr;
-	// Create a new basic block to start insertion into.
-	BasicBlock* BB = BasicBlock::Create(TheContext, "entry", TheFunction);
-	Builder.SetInsertPoint(BB);
-	// Record the function arguments in the NamedValues map.
-	NamedValues.clear();
-	for (auto& Arg : TheFunction->args())
-		NamedValues[Arg.getName()] = &Arg;
-	if (Value* RetVal = Body->CodeGen()) {
-		// Finish off the function.
-		Builder.CreateRet(RetVal);
-		// Validate the generated code, checking for consistency.
-		verifyFunction(*TheFunction);
-		return TheFunction;
+void ReturnStatement::CodeGen() {
+	Builder.CreateRet(Expr->CodeGen());
+}
+
+void BlockStatement::CodeGen() {
+	BasicBlock* basicBlock = BasicBlock::Create(TheContext, "entry", CurrentFunc);
+	Builder.SetInsertPoint(basicBlock);
+
+	for (auto& statement : Statements) {
+		statement->CodeGen();
 	}
-	// Error reading body, remove function.
-	TheFunction->eraseFromParent();
-	return nullptr;
+}
+
+Function* FuncAST::CodeGen() {
+	CurrentFunc = TheModule->getFunction(Proto.Name);
+	if (!CurrentFunc)
+		CurrentFunc = Proto.CodeGen();
+	if (!CurrentFunc)
+		return nullptr;
+
+	NamedValues.clear();
+	for (auto& Arg : CurrentFunc->args())
+		NamedValues[Arg.getName()] = &Arg;
+	if (std::holds_alternative<ExprPtr>(Body)) {
+		if (Value* RetVal = std::get<ExprPtr>(Body)->CodeGen()) {
+
+			BasicBlock* BB = BasicBlock::Create(TheContext, "entry", CurrentFunc);
+			Builder.SetInsertPoint(BB);
+
+			Builder.CreateRet(RetVal);
+		} else {
+			CurrentFunc->eraseFromParent();
+			return nullptr;
+		}
+	} else {
+		std::get<std::unique_ptr<BlockStatement>>(Body)->CodeGen();
+	}
+
+	verifyFunction(*CurrentFunc);
+	return CurrentFunc;
 }
 
 void StructAST::CodeGen() {
