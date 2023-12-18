@@ -8,6 +8,7 @@ public:
 
 	RedyParser() : m_lexer(CreateRedyLexer("")) {}
 private:
+	ExprPtr ParseInt();
 	ExprPtr ParseDouble();
 	ExprPtr ParsePrimary();
 	ExprPtr ParseArgs(ExprPtr expr);
@@ -15,7 +16,6 @@ private:
 	ExprPtr ParsePostfix();
 	ExprPtr ParseUnary();
 	ExprPtr ParseExpr(int precedence = 1);
-	StatementPtr ParseStatementOrExpr();
 	StatementPtr ParseStatement();
 	TypeAST ParseType();
 	VisibilityAST ParseVisibility();

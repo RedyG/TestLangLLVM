@@ -10,14 +10,14 @@ void main() {
 		auto defaultTypes = parser.Parse(R"(
 			pub struct f64 {}
 			pub struct bool {} 
+			pub struct i32 {}
 		)");
 
 		auto module = parser.Parse(R"(
 			pub struct TestStruct {
-				pub f64 TestFunc() => 2.0;
-				pub f64 SomeField;
-				f64 comFunc(bool arg2, f64 secondd) {
-					return secondd + secondd;
+				i32 Test;
+				f64 main() {
+					return 1.0 + 2.0 + 5.0;
 				}
 			} 
 		)");
@@ -26,7 +26,7 @@ void main() {
 		TypeTable::AddModuleTypes(module);
 		module.TypeCheck();
 		module.CodeGen();
-		DumpIr();
+		RunCode();
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;

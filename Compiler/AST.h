@@ -26,13 +26,25 @@ private:
 
 using ExprPtr = std::unique_ptr<ExprAST>;
 
-class DoubleExpr : public ExprAST {
+class IntExpr : public ExprAST {
+public:
+	int Value;
+
+	llvm::Value* CodeGen() override;
+
+	IntExpr(int value) : Value(value) {}
+
+private:
+	TypeDeclAST* OnTypeCheck() override;
+};
+
+class FloatExpr : public ExprAST {
 public:
 	double Value;
 
 	llvm::Value* CodeGen() override;
 
-	DoubleExpr(double value) : Value(value) {}
+	FloatExpr(double value) : Value(value) {}
 
 private:
 	TypeDeclAST* OnTypeCheck() override;

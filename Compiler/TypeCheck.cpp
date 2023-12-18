@@ -21,7 +21,11 @@ VariableAST* FindSymbol(std::string_view name) {
 	return nullptr;
 }
 
-TypeDeclAST* DoubleExpr::OnTypeCheck() {
+TypeDeclAST* IntExpr::OnTypeCheck() {
+	return TypeTable::GetTypeDecl(TypeAST("i32"));
+}
+
+TypeDeclAST* FloatExpr::OnTypeCheck() {
 	return TypeTable::GetTypeDecl(TypeAST("f64"));
 }
 

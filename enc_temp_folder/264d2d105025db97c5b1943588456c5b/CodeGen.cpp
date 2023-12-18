@@ -27,17 +27,17 @@ void RunCode() {
 	auto& JIT = JITMaybe.get(); // DO NOT COMBINE WITH THE LINE BEFORE
 
 	// Add the module.
-	if (auto err = JIT->addIRModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))))
+	if (auto Err = JIT->addIRModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))))
 		return;
 
 	// Look up the JIT'd code entry point.
-	auto& entrySym = JIT->lookup("main").get();
+	auto& EntrySym = JIT->lookup("main").get();
 
 	// Cast the entry point address to a function pointer.
-	auto* entry = entrySym.toPtr<double()>();
+	auto* Entry = EntrySym.toPtr<double()>();
 
 	// Call into JIT'd code.
-	double res = entry();
+	double res = Entry();
 	std::cout << "result: " << res;
 }
 

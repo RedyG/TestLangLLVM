@@ -1,6 +1,5 @@
 #pragma once
 #include "Lexer.h"
-#undef EOF;
 
 enum class TokenType {
     Invalid,
@@ -26,7 +25,8 @@ enum class TokenType {
     Return,
 
     Identifier,
-    Double
+    Float,
+    Int,
 };
 
 using RedyLexer = Lexer<TokenType>;

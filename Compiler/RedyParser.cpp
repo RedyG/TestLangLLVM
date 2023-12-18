@@ -38,21 +38,31 @@ bool IsUnary(TokenType type) {
 std::optional<Compiler::Operator> GetOperator(TokenType type) {
 	auto it = operators.find(type);
 	return it == operators.end() ? std::nullopt : std::make_optional(it->second);
+}	
+
+ExprPtr RedyParser::ParseInt() {
+	auto content = m_lexer.Current().Content;
+	m_lexer.Consume();
+	if (content.contains('_')) {
+		return std::make_unique<IntExpr>(std::stoi(EraseChar(content, '_')));
+	}
+
+	return std::make_unique<IntExpr>(std::stoi(std::string(content)));
 }
 
 
 ExprPtr RedyParser::ParseDouble() {
 	auto content = m_lexer.Current().Content;
 	m_lexer.Consume();
-	if (content.contains('_')) { // checking first because most numbers won't contain _
-		return std::make_unique<DoubleExpr>(std::stod(EraseChar(content, '_')));
+	if (content.contains('_')) {
+		return std::make_unique<FloatExpr>(std::stod(EraseChar(content, '_')));
 	}
-	return std::make_unique<DoubleExpr>(std::stod(std::string(content)));
+	return std::make_unique<FloatExpr>(std::stod(std::string(content)));
 }
 
 // This method might return nullptr
 ExprPtr RedyParser::ParsePrimary() {
-	if (m_lexer.Current().Type == TokenType::Double) {
+	if (m_lexer.Current().Type == TokenType::Float) {
 		return std::move(ParseDouble());
 	}
 	else if (m_lexer.Current().Type == TokenType::Identifier)
@@ -66,6 +76,9 @@ ExprPtr RedyParser::ParsePrimary() {
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
 			return std::move(expr);
 		}
+	}
+	else if (m_lexer.Current().Type == TokenType::Int) {
+		return std::move(ParseInt());
 	}
 	
 	return nullptr;
@@ -249,6 +262,8 @@ StatementPtr RedyParser::ParseStatement() {
 		m_lexer.Consume();
 		return std::make_unique<BlockStatement>(std::move(statements));
 	}
+
+
 
 	if (m_lexer.ConsumeIf(TokenType::Return)) {
 		auto expr = ParseExpr();
