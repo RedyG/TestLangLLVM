@@ -2,6 +2,7 @@
 #include "RedyLexer.h"
 #include <variant>
 #include <map>
+#include "CodeGenCtx.h"
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
 using namespace llvm;
@@ -14,7 +15,7 @@ public:
 
 	// not using the visitor pattern because every passes return different types
 	// so I would have to deal with std::any or something
-	virtual Value* CodeGen() = 0;
+	virtual Value* CodeGen(CodeGenCtx ctx) = 0;
 	TypeDeclAST* TypeCheck() {
 		Type = OnTypeCheck();
 		return Type;
@@ -30,7 +31,7 @@ class IntExpr : public ExprAST {
 public:
 	int Value;
 
-	llvm::Value* CodeGen() override;
+	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 	IntExpr(int value) : Value(value) {}
 
@@ -42,7 +43,7 @@ class FloatExpr : public ExprAST {
 public:
 	double Value;
 
-	llvm::Value* CodeGen() override;
+	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 	FloatExpr(double value) : Value(value) {}
 
@@ -56,7 +57,7 @@ public:
 	TokenType Op;
 	ExprPtr RHS;
 
-	Value* CodeGen() override;
+	Value* CodeGen(CodeGenCtx ctx) override;
 
 	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
 
@@ -70,7 +71,7 @@ public:
 
 	TypeAST(std::string_view name) : Name(name) {}
 
-	Type* CodeGen();
+	Type* CodeGen(LLVMContext& context);
 };
 
 struct TypeASTComparer
@@ -97,7 +98,7 @@ public:
 	VariableAST* Symbol;
 	std::string_view Name;
 
-	Value* CodeGen() override;
+	Value* CodeGen(CodeGenCtx ctx) override;
 
 	VariableExpr(std::string_view name) : Name(name) {}
 
@@ -110,7 +111,7 @@ public:
 	ExprPtr Callee;
 	std::vector<ExprPtr> Params;
 
-	Value* CodeGen() override;
+	Value* CodeGen(CodeGenCtx ctx) override;
 
 	CallExpr(ExprPtr callee, std::vector<ExprPtr> params)
 		: Callee(std::move(callee)), Params(std::move(params)) {}
@@ -124,7 +125,7 @@ public:
 	TokenType Op;
 	ExprPtr Expr;
 
-	Value* CodeGen() override;
+	Value* CodeGen(CodeGenCtx ctx) override;
 
 	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
 
@@ -148,14 +149,13 @@ public:
 	ProtoAST(VisibilityAST visibility, TypeAST type, std::string_view name, std::vector<VariableAST> params)
 		: Visibility(visibility), Type(type), Name(name), Params(std::move(params)) {}
 
-	Function* CodeGen();
-
+	void Register(Module& module);
 };
 
 class StatementAST {
 public:
 	virtual void TypeCheck() = 0;
-	virtual void CodeGen() = 0;
+	virtual void CodeGen(CodeGenCtx ctx) = 0;
 };
 
 using StatementPtr = std::unique_ptr<StatementAST>;
@@ -165,7 +165,7 @@ public:
 	std::vector<StatementPtr> Statements;
 
 	void TypeCheck() override;
-	void CodeGen() override;
+	void CodeGen(CodeGenCtx ctx) override;
 
 	BlockStatement(std::vector<StatementPtr> statements) : Statements(std::move(statements)) {}
 };
@@ -175,7 +175,7 @@ public:
 	ExprPtr Expr;
 
 	void TypeCheck() override;
-	void CodeGen() override;
+	void CodeGen(CodeGenCtx ctx) override;
 
 	ReturnStatement(ExprPtr expr) : Expr(std::move(expr)) {}
 };
@@ -190,7 +190,7 @@ public:
 	FuncAST(ProtoAST proto, BlockOrExpr body) : Proto(std::move(proto)), Body(std::move(body)) {}
 
 	void TypeCheck();
-	Function* CodeGen();
+	void CodeGen(CodeGenCtx ctx);
 };
 
 class VariableDeclStatement: public StatementAST {
@@ -198,7 +198,7 @@ public:
 	VariableAST Variable;
 
 	void TypeCheck() override;
-	void CodeGen() override;
+	void CodeGen(CodeGenCtx ctx) override;
 
 	VariableDeclStatement(VariableAST variable) : Variable(std::move(variable)) {}
 };
@@ -229,7 +229,8 @@ public:
 	std::vector<FieldAST> Fields;
 	
 	void TypeCheck();
-	void CodeGen();
+	void CodeGen(CodeGenCtx ctx);
+	void Register(Module& module);
 
 	StructAST(std::vector<FieldAST> fields, TypeDeclAST typeDecl)
 		: Fields(std::move(fields)), TypeDecl(std::move(typeDecl)) {}
@@ -240,7 +241,8 @@ public:
 	std::vector<StructAST> Structs;
 
 	void TypeCheck();
-	void CodeGen();
+	void CodeGen(CodeGenCtx ctx);
+	void Register(Module& module);
 
 	ModuleAST(std::vector<StructAST> structs) : Structs(std::move(structs)) {}
 };

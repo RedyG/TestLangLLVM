@@ -2,62 +2,23 @@
 #include "TypeTable.h"
 #include <llvm/IR/Verifier.h>
 #include <fstream>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/ExecutionEngine/Orc/LLJIT.h>
-#include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 
-std::unique_ptr<LLVMContext> TheContext = std::make_unique<LLVMContext>();
-IRBuilder<> Builder(*TheContext);
-std::unique_ptr<Module> TheModule;
 std::map<std::string_view, Value*> NamedValues;
 Function* CurrentFunc;
 
-void InitModule() {
-	llvm::InitializeNativeTarget();
-	llvm::InitializeNativeTargetAsmPrinter();
-	llvm::InitializeNativeTargetAsmParser();
-	TheModule = std::make_unique<Module>("Test", *TheContext);
+Value* IntExpr::CodeGen(CodeGenCtx ctx) {
+	return ConstantInt::get(IntegerType::getInt32Ty(ctx.GetContext()), Value, true);
 }
 
-
-void RunCode() {
-	TheModule->dump();
-
-	auto JITMaybe = llvm::orc::LLJITBuilder().create();
-	auto& JIT = JITMaybe.get(); // DO NOT COMBINE WITH THE LINE BEFORE
-
-	// Add the module.
-	if (auto err = JIT->addIRModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))))
-		return;
-
-	// Look up the JIT'd code entry point.
-	auto& entrySym = JIT->lookup("main").get();
-
-	// Cast the entry point address to a function pointer.
-	auto* entry = entrySym.toPtr<double()>();
-
-	// Call into JIT'd code.
-	double res = entry();
-	std::cout << "result: " << res;
+Value* FloatExpr::CodeGen(CodeGenCtx ctx) {
+	return ConstantFP::get(ctx.GetContext(), APFloat(Value));
 }
 
-void DumpIr() {
-	TheModule->dump();
-}
-
-Value* IntExpr::CodeGen() {
-	return ConstantInt::get(IntegerType::getInt32Ty(*TheContext), Value, true);
-}
-
-Value* FloatExpr::CodeGen() {
-	return ConstantFP::get(*TheContext, APFloat(Value));
-}
-
-Value* BinOpExpr::CodeGen() {
-	auto lhs = LHS->CodeGen();
-	auto rhs = RHS->CodeGen();
+Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
+	auto lhs = LHS->CodeGen(ctx);
+	auto rhs = RHS->CodeGen(ctx);
 	switch (Op) {
-	case TokenType::Add: return Builder.CreateFAdd(lhs, rhs, "addtmp");;
+	case TokenType::Add: return ctx.Builder.CreateFAdd(lhs, rhs, "addtmp");;
 	case TokenType::Sub: return nullptr;
 	case TokenType::Mul: return nullptr;
 	case TokenType::Div: return nullptr;
@@ -66,107 +27,82 @@ Value* BinOpExpr::CodeGen() {
 	throw std::exception("no binop yet");
 }
 
-Value* VariableExpr::CodeGen() {
+Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
 	return NamedValues[Name];
 }
 
-Value* CallExpr::CodeGen() {
-	return Callee->CodeGen();
-	//throw std::exception("no call yet");
+Value* CallExpr::CodeGen(CodeGenCtx ctx) {
+	Function* func = ctx.Module.getFunction(dynamic_cast<VariableExpr&>(*Callee).Name);
+	return ctx.Builder.CreateCall(func, {}, "calltmp");
 }
 
-Value* UnaryExpr::CodeGen() {
-	return Expr->CodeGen();
+Value* UnaryExpr::CodeGen(CodeGenCtx ctx) {
+	return Expr->CodeGen(ctx);
 }
 
-Type* TypeAST::CodeGen() {
+Type* TypeAST::CodeGen(LLVMContext& context) {
 	if (Name == "f64") {
-		return Type::getDoubleTy(*TheContext);
+		return Type::getDoubleTy(context);
 	}
 	if (Name == "bool") {
-		return Type::getInt1Ty(*TheContext);
+		return Type::getInt1Ty(context);
 	}
 	if (Name == "i32") {
-		return Type::getInt32Ty(*TheContext);
+		return Type::getInt32Ty(context);
 	}
 
 	throw std::exception("invalid type");
 }
 
-Function* ProtoAST::CodeGen() {
-	std::vector<llvm::Type*> types;
-	types.reserve(Params.size());
-	for (auto& param : Params) {
-		types.push_back(param.Type.CodeGen());
-	}
-	FunctionType* functionType =
-		FunctionType::get(Type.CodeGen(), types, false);
-	Function* function =
-		Function::Create(functionType, Function::ExternalLinkage, Name, *TheModule);
-	// Set names for all arguments.
-	unsigned i = 0;
-	for (auto& Arg : function->args())
-		Arg.setName(Params[i++].Name);
-	return function;
+void ReturnStatement::CodeGen(CodeGenCtx ctx) {
+	ctx.Builder.CreateRet(Expr->CodeGen(ctx));
 }
 
-void ReturnStatement::CodeGen() {
-	Builder.CreateRet(Expr->CodeGen());
-}
-
-void BlockStatement::CodeGen() {
-	BasicBlock* basicBlock = BasicBlock::Create(*TheContext, "entry", CurrentFunc);
-	Builder.SetInsertPoint(basicBlock);
+void BlockStatement::CodeGen(CodeGenCtx ctx) {
+	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetContext(), "entry", CurrentFunc);
+	ctx.Builder.SetInsertPoint(basicBlock);
 
 	for (auto& statement : Statements) {
-		statement->CodeGen();
+		statement->CodeGen(ctx);
 	}
 }
 
-Function* FuncAST::CodeGen() {
-	CurrentFunc = TheModule->getFunction(Proto.Name);
+void FuncAST::CodeGen(CodeGenCtx ctx) {
+	CurrentFunc = ctx.Module.getFunction(Proto.Name);
 	if (!CurrentFunc)
-		CurrentFunc = Proto.CodeGen();
-	if (!CurrentFunc)
-		return nullptr;
+		throw std::exception("Function not found");
 
 	NamedValues.clear();
 	for (auto& Arg : CurrentFunc->args())
 		NamedValues[Arg.getName()] = &Arg;
 	if (std::holds_alternative<ExprPtr>(Body)) {
-		if (Value* RetVal = std::get<ExprPtr>(Body)->CodeGen()) {
+		if (Value* RetVal = std::get<ExprPtr>(Body)->CodeGen(ctx)) {
 
-			BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", CurrentFunc);
-			Builder.SetInsertPoint(BB);
+			BasicBlock* BB = BasicBlock::Create(ctx.GetContext(), "entry", CurrentFunc);
+			ctx.Builder.SetInsertPoint(BB);
 
-			Builder.CreateRet(RetVal);
-		} else {
-			CurrentFunc->eraseFromParent();
-			return nullptr;
+			ctx.Builder.CreateRet(RetVal);
 		}
-	} else {
-		std::get<std::unique_ptr<BlockStatement>>(Body)->CodeGen();
+		else {
+			CurrentFunc->eraseFromParent();
+			throw std::exception("Invalid codegen");
+		}
+	}
+	else {
+		std::get<std::unique_ptr<BlockStatement>>(Body)->CodeGen(ctx);
 	}
 
 	verifyFunction(*CurrentFunc);
-	return CurrentFunc;
 }
 
-void StructAST::CodeGen() {
-	std::vector<Type*> types;
-	for (auto& field : Fields) {
-		types.push_back(field.Variable.Type.CodeGen());
-	}
-
-	auto type = StructType::create(types, TypeDecl.Name);
-
+void StructAST::CodeGen(CodeGenCtx ctx) {
 	for (auto& method : TypeDecl.Methods) {
-		method.CodeGen();
+		method.CodeGen(ctx);
 	}
 }
 
-void ModuleAST::CodeGen() {
+void ModuleAST::CodeGen(CodeGenCtx ctx) {
 	for (auto& structAST : Structs) {
-		structAST.CodeGen();
+		structAST.CodeGen(ctx);
 	}
 }

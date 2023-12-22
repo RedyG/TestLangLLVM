@@ -15,12 +15,6 @@ namespace TypeTable {
 		return decl->second;
 	}
 
-	void AddModuleTypes(ModuleAST& module) {
-		for (auto& structAST : module.Structs) {
-			typeDeclMap.insert({ TypeAST(structAST.TypeDecl.Name), &structAST.TypeDecl });
-		}
-	}
-
 	void AddTypeDecl(TypeAST type, TypeDeclAST* typeDecl) {
 		typeDeclMap.insert({ type, typeDecl });
 	}

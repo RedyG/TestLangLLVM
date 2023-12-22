@@ -89,7 +89,8 @@ ExprPtr RedyParser::ParseArgs(ExprPtr expr) {
 	std::vector<ExprPtr> params {};
 
 	if (m_lexer.ConsumeIf(TokenType::RParen)){
-		return std::make_unique<CallExpr>(std::move(expr), std::move(params));
+		auto res = std::make_unique<CallExpr>(std::move(expr), std::move(params));
+		return res;
 	}
 
 	do {
