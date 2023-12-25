@@ -16,7 +16,7 @@ void StructAST::Register(Module& module) {
 		for (auto& field : Fields) {
 			types.push_back(field.Variable.Type.CodeGen(module.getContext()));
 		}
-
+		
 		auto type = StructType::create(types, TypeDecl.Name);
 	}
 
@@ -36,7 +36,7 @@ void ProtoAST::Register(Module& module) {
 	std::vector<llvm::Type*> types;
 	types.reserve(Params.size());
 	for (auto& param : Params) {
-		types.push_back(param.Type.CodeGen(module.getContext()));
+		types.push_back(param.Variable.Type.CodeGen(module.getContext()));
 	}
 	FunctionType* functionType =
 		FunctionType::get(Type.CodeGen(module.getContext()), types, false);
@@ -45,5 +45,5 @@ void ProtoAST::Register(Module& module) {
 	// Set names for all arguments.
 	unsigned i = 0;
 	for (auto& Arg : function->args())
-		Arg.setName(Params[i++].Name);
+		Arg.setName(Params[i++].Variable.Name);
 }

@@ -6,14 +6,14 @@
 #include "TypeTable.h"
 #include <stack>
 
-std::vector<VariableAST*> symbols;
+std::vector<VariableDeclStatement*> symbols;
 std::stack<int> symbolsCount;
 TypeDeclAST* ReturnType;
 
-VariableAST* FindSymbol(std::string_view name) {
+VariableDeclStatement* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
 		auto symbol = symbols[i];
-		if (symbol->Name == name) {
+		if (symbol->Variable.Name == name) {
 			return symbol;
 		}
 	}
@@ -55,12 +55,12 @@ TypeDeclAST* BinOpExpr::OnTypeCheck() {
 }
 
 TypeDeclAST* VariableExpr::OnTypeCheck() {
-	auto symbol = FindSymbol(Name);
-	if (symbol == nullptr) {
+	Symbol = FindSymbol(Name);
+	if (Symbol == nullptr) {
 		Logger::Error(std::format("Tried to use undeclared variable {0}", Name));
 		return nullptr;
 	}
-	return TypeTable::GetTypeDecl(symbol->Type);
+	return TypeTable::GetTypeDecl(Symbol->Variable.Type);
 }
 
 TypeDeclAST* CallExpr::OnTypeCheck() {
@@ -94,7 +94,7 @@ void FuncAST::TypeCheck() {
 			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, bodyType->Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
-		block->TypeCheck();
+		block->TypeCheckStatement();
 	}
 
 	symbols.resize(symbols.size() - Proto.Params.size());
@@ -112,23 +112,23 @@ void ModuleAST::TypeCheck() {
 	}
 }
 
-void VariableDeclStatement::TypeCheck() {
-	symbols.push_back(&Variable);
+void VariableDeclStatement::TypeCheckStatement() {
+	symbols.push_back(this);
 	symbolsCount.top()++;
 }
 
-void BlockStatement::TypeCheck() {
+void BlockStatement::TypeCheckStatement() {
 	symbolsCount.push(0);
 
 	for (auto& statement : Statements) {
-		statement->TypeCheck();
+		statement->TypeCheckStatement();
 	}
 
 	symbols.resize(symbols.size() - symbolsCount.top());
 	symbolsCount.pop();
 }
 
-void ReturnStatement::TypeCheck() {
+void ReturnStatement::TypeCheckStatement() {
 	auto exprType = Expr->TypeCheck();
 	if (exprType == nullptr)
 		return;

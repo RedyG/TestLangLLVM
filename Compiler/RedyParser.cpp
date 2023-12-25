@@ -127,7 +127,42 @@ ExprPtr RedyParser::ParseUnary() {
 	return std::move(ParsePostfix());
 }
 
-ExprPtr RedyParser::ParseExpr(int precedence) {
+const int StatementPrecendence = -1;
+
+std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precedence) {
+	if (precedence == StatementPrecendence) {
+		if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+			std::vector<StatementPtr> statements;
+			while (m_lexer.Current().Type != TokenType::RCurly) {
+				statements.push_back(std::move(ParseStatement()));
+			}
+			m_lexer.Consume();
+			return std::make_unique<BlockStatement>(std::move(statements));
+		}
+
+
+		if (m_lexer.ConsumeIf(TokenType::Return)) {
+			auto expr = ParseExpr();
+			if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+				return std::make_unique<ReturnStatement>(std::move(expr));
+			}
+		}
+
+		if (auto type = ParseType()) {
+			if (m_lexer.Current().Type == TokenType::Identifier) {
+				auto name = m_lexer.Current().Content;
+				m_lexer.Consume();
+				if (m_lexer.ConsumeIf(TokenType::Equal)) {
+					auto expr = ParseExpr();
+					if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+						return std::make_unique<VariableDeclStatement>(std::move(VariableAST(type.value(), name, std::move(expr))));
+					}
+				}
+			}
+		}
+	}
+
+
 	auto expr = ParseUnary();
 	while (true) {
 		auto op = GetOperator(m_lexer.Current().Type);
@@ -140,17 +175,33 @@ ExprPtr RedyParser::ParseExpr(int precedence) {
 			std::move(ParseExpr(op.value().Precedence + (int)op.value().LeftAssociative))
 		);
 	}
-	return std::move(expr);
+	return expr;
 }
 
-TypeAST RedyParser::ParseType() {
+ExprPtr RedyParser::ParseExpr(int precedence) {
+	return std::move(std::get<ExprPtr>(ParseExprOrStatement(precedence))); // TODO: handle error
+}
+
+StatementPtr RedyParser::ParseStatement() {
+	return std::move(std::get<StatementPtr>(ParseExprOrStatement(StatementPrecendence))); // TODO: handle error
+}
+
+std::optional<TypeAST> RedyParser::ParseType() {
 	if (m_lexer.Current().Type == TokenType::Identifier) {
 		auto name = m_lexer.Current().Content;
 		m_lexer.Consume();
-		return TypeAST(name);
+		return std::make_optional(TypeAST(name));
 	}
 
-	throw std::exception("couldn't parse type");
+	return std::nullopt;
+}
+
+TypeAST RedyParser::ParseTypeUnwrap() {
+	if (auto type = ParseType()) {
+		return type.value();
+	}
+
+	throw std::exception("invalid type parsing");
 }
 
 VisibilityAST RedyParser::ParseVisibility() {
@@ -160,19 +211,19 @@ VisibilityAST RedyParser::ParseVisibility() {
 	return VisibilityAST::Private;
 }
 
-std::vector<VariableAST> RedyParser::ParseParams() {
-	std::vector<VariableAST> params {};
+std::vector<VariableDeclStatement> RedyParser::ParseParams() {
+	std::vector<VariableDeclStatement> params {};
 
 	if (m_lexer.ConsumeIf(TokenType::RParen)) {
 		return params;
 	}
 
 	do {
-		auto type = ParseType();
+		auto type = ParseTypeUnwrap();
 		if (m_lexer.Current().Type == TokenType::Identifier) {
 			auto name = m_lexer.Current().Content;
 			m_lexer.Consume();
-			params.emplace_back(type, name);
+			params.emplace_back(VariableAST(type, name));
 		}
 		
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
@@ -200,7 +251,7 @@ void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST
 			return;
 
 		auto visibility = ParseVisibility();
-		auto type = ParseType();
+		auto type = ParseTypeUnwrap();
 		if (m_lexer.Current().Type == TokenType::Identifier) {
 			auto name = m_lexer.Current().Content;
 			m_lexer.Consume();
@@ -252,28 +303,6 @@ StructAST RedyParser::ParseStruct() {
 	}
 
 	throw std::exception("invalid struct definition");
-}
-
-StatementPtr RedyParser::ParseStatement() {
-	if (m_lexer.ConsumeIf(TokenType::LCurly)) {
-		std::vector<StatementPtr> statements;
-		while (m_lexer.Current().Type != TokenType::RCurly) {
-			statements.push_back(std::move(ParseStatement()));
-		}
-		m_lexer.Consume();
-		return std::make_unique<BlockStatement>(std::move(statements));
-	}
-
-
-
-	if (m_lexer.ConsumeIf(TokenType::Return)) {
-		auto expr = ParseExpr();
-		if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-			return std::make_unique<ReturnStatement>(std::move(expr));
-		}
-	}
-
-	throw std::exception("Invalid statement");
 }
 
 ModuleAST RedyParser::Parse(std::string_view input) {

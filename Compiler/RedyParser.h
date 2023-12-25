@@ -15,13 +15,29 @@ private:
 	ExprPtr ParsePostfix(ExprPtr expr);
 	ExprPtr ParsePostfix();
 	ExprPtr ParseUnary();
+	std::variant<ExprPtr, StatementPtr> ParseExprOrStatement(int precedence);
 	ExprPtr ParseExpr(int precedence = 1);
 	StatementPtr ParseStatement();
-	TypeAST ParseType();
+	std::optional<TypeAST> ParseType();
+	TypeAST ParseTypeUnwrap();
 	VisibilityAST ParseVisibility();
-	std::vector<VariableAST> ParseParams();
+	std::vector<VariableDeclStatement> ParseParams();
 	void ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST>& funcs, std::vector<ProtoAST>& protos);
 	StructAST ParseStruct();
 
 	RedyLexer m_lexer;
-};
+};   
+
+
+
+/*
+
+class AGAF : fwaiojfw, wfawfw ,fawf {
+ : 
+}
+
+extend AGAF : 8fiawf, fwaf {
+	
+}
+
+*/

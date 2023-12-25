@@ -16,7 +16,6 @@ void InitModule() {
 	TheModule = std::make_unique<Module>("Test", *TheContext);
 }
 
-
 void RunCode(std::unique_ptr<Module> module, std::unique_ptr<LLVMContext> context) {
 
 	module->dump();
@@ -54,9 +53,10 @@ void main() {
 				i32 Test;
 
 				f64 main() {
-					return 1.0 + 2.0 + other();
+					f64 a = 2.0;
+					return 1.0 + a;
 				}
-				f64 other() => 4.0;
+				f64 other() => 4.0 + 2.0;
 			} 
 		)");
 
@@ -71,3 +71,21 @@ void main() {
 		throw;
 	}
 }
+
+
+/*
+
+void other(Vec<int> a) {
+	
+
+}
+
+main() {
+	Vec<int> b = [];
+	other();
+	b.Push(3);
+}
+
+
+
+*/
