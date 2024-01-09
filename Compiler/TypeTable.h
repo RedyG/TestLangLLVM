@@ -3,6 +3,6 @@
 #include "AST.h" 
 
 namespace TypeTable {
-	TypeDeclAST* GetTypeDecl(TypeAST type);
-	void AddTypeDecl(TypeAST type, TypeDeclAST* typeDecl);
+	ExprType GetExprType(TypeAST type);
+	void AddExprType(TypeAST type, ExprType exprType);
 }

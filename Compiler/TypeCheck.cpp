@@ -5,10 +5,11 @@
 #include <format>
 #include "TypeTable.h"
 #include <stack>
+#include "TypeDeclAST.h"
 
 std::vector<VariableDeclStatement*> symbols;
 std::stack<int> symbolsCount;
-TypeDeclAST* ReturnType;
+ExprType ReturnType = UnknownType;
 
 VariableDeclStatement* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
@@ -21,12 +22,12 @@ VariableDeclStatement* FindSymbol(std::string_view name) {
 	return nullptr;
 }
 
-TypeDeclAST* IntExpr::OnTypeCheck() {
-	return TypeTable::GetTypeDecl(TypeAST("i32"));
+ExprType IntExpr::OnTypeCheck() {
+	return TypeTable::GetExprType(TypeAST("i32"));
 }
 
-TypeDeclAST* FloatExpr::OnTypeCheck() {
-	return TypeTable::GetTypeDecl(TypeAST("f64"));
+ExprType FloatExpr::OnTypeCheck() {
+	return TypeTable::GetExprType(TypeAST("f64"));
 }
 
 std::string_view GetOpName(TokenType op) {
@@ -38,46 +39,46 @@ std::string_view GetOpName(TokenType op) {
 	}
 }
 
-TypeDeclAST* BinOpExpr::OnTypeCheck() {
+ExprType BinOpExpr::OnTypeCheck() {
 	auto lhs = LHS->TypeCheck();
 	auto rhs = RHS->TypeCheck();
 
-	if (lhs == nullptr || rhs == nullptr) {
-		return nullptr;
+	if (lhs.IsUnknown() || rhs.IsUnknown()) {
+		return UnknownType;
 	}
 
 	if (lhs != rhs) {
-		Logger::Error(std::format("Couldn't {0} values of type {1} and {2}", GetOpName(Op), lhs->Name, rhs->Name));
-		return nullptr;
+		Logger::Error(std::format("Couldn't {0} values of type {1} and {2}", GetOpName(Op), lhs.Decl->Name, rhs.Decl->Name));
+		return UnknownType;
 	}
 
 	return lhs;
 }
 
-TypeDeclAST* VariableExpr::OnTypeCheck() {
+ExprType VariableExpr::OnTypeCheck() {
 	Symbol = FindSymbol(Name);
 	if (Symbol == nullptr) {
 		Logger::Error(std::format("Tried to use undeclared variable {0}", Name));
-		return nullptr;
+		return UnknownType;
 	}
-	return TypeTable::GetTypeDecl(Symbol->Variable.Type);
+	return TypeTable::GetExprType(Symbol->Variable.Type);
 }
 
-TypeDeclAST* CallExpr::OnTypeCheck() {
+ExprType CallExpr::OnTypeCheck() {
 	auto callee = Callee->TypeCheck();
-	return nullptr; // todo
+	return UnknownType; // todo
 }
 
-TypeDeclAST* UnaryExpr::OnTypeCheck() {
+ExprType UnaryExpr::OnTypeCheck() {
 	auto type = Expr->TypeCheck();
-	if (type != TypeTable::GetTypeDecl(TypeAST("bool"))) {
-		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type->Name));
+	if (type != TypeTable::GetExprType(TypeAST("bool"))) {
+		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type.Name));
 	}
 	return type;
 }
 
 void FuncAST::TypeCheck() {
-	ReturnType = TypeTable::GetTypeDecl(Proto.Type);
+	ReturnType = TypeTable::GetExprType(Proto.Type);
 
 	for (auto& symbol : Proto.Params) {
 		symbols.push_back(&symbol);
@@ -87,11 +88,11 @@ void FuncAST::TypeCheck() {
 		auto& expr = std::get<ExprPtr>(Body);
 		auto bodyType = expr->TypeCheck();
 
-		if (bodyType == nullptr)
+		if (bodyType.IsUnknown())
 			return;
 
 		if (bodyType != ReturnType)
-			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, bodyType->Name));
+			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Name, bodyType.Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
 		block->TypeCheckStatement();
@@ -130,9 +131,9 @@ void BlockStatement::TypeCheckStatement() {
 
 void ReturnStatement::TypeCheckStatement() {
 	auto exprType = Expr->TypeCheck();
-	if (exprType == nullptr)
+	if (exprType.IsUnknown())
 		return;
 
 	if (exprType != ReturnType)
-		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, exprType->Name));
+		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Name, exprType.Name));
 }

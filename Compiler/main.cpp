@@ -4,6 +4,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
+using namespace llvm;
 
 std::unique_ptr<LLVMContext> TheContext = std::make_unique<LLVMContext>();
 IRBuilder<> Builder(*TheContext);
@@ -14,6 +15,16 @@ void InitModule() {
 	llvm::InitializeNativeTargetAsmPrinter();
 	llvm::InitializeNativeTargetAsmParser();
 	TheModule = std::make_unique<Module>("Test", *TheContext);
+}
+
+TypeDeclAST* f64Decl = new TypeDeclAST(VisibilityAST::Public, "f64", {});
+TypeDeclAST* boolDecl = new TypeDeclAST(VisibilityAST::Public, "bool", {});
+TypeDeclAST* i32Decl = new TypeDeclAST(VisibilityAST::Public, "i32", {});
+
+void InitDefaultTypes() {
+	TypeTable::AddExprType(TypeAST("f64"), ExprType(f64Decl, Type::getDoubleTy(*TheContext)));
+	TypeTable::AddExprType(TypeAST("bool"), ExprType(boolDecl, Type::getInt1Ty(*TheContext)));
+	TypeTable::AddExprType(TypeAST("i32"), ExprType(i32Decl, Type::getInt32Ty(*TheContext)));
 }
 
 void RunCode(std::unique_ptr<Module> module, std::unique_ptr<LLVMContext> context) {
@@ -42,11 +53,11 @@ void main() {
 	InitModule();
 	try {
 		RedyParser parser;
-		auto defaultTypes = parser.Parse(R"(
+		/*auto defaultTypes = parser.Parse(R"(
 			pub struct f64 {}
 			pub struct bool {} 
 			pub struct i32 {}
-		)");
+		)");*/
 
 		auto module = parser.Parse(R"(
 			pub struct TestStruct {
@@ -60,7 +71,7 @@ void main() {
 			} 
 		)");
 
-		defaultTypes.Register(*TheModule);
+		//defaultTypes.Register(*TheModule);
 		module.Register(*TheModule);
 		module.TypeCheck();
 		module.CodeGen(CodeGenCtx(*TheModule, Builder));

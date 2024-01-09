@@ -2,20 +2,20 @@
 #include <format>
 #include "Logger.h"
 
-std::map<TypeAST, TypeDeclAST*, TypeASTComparer> typeDeclMap;
+std::map<TypeAST, ExprType, TypeASTComparer> typeDeclMap;
 
 namespace TypeTable {
-	TypeDeclAST* GetTypeDecl(TypeAST type) {
-		auto decl = typeDeclMap.find(type);
-		if (decl == typeDeclMap.end()) {
+	ExprType GetExprType(TypeAST type) {
+		auto exprType = typeDeclMap.find(type);
+		if (exprType == typeDeclMap.end()) {
 			Logger::Error(std::format("The type {0} doesn't exist.", type.Name));
-			return nullptr;
+			return UnknownType;
 		}
 
-		return decl->second;
+		return exprType->second;
 	}
 
-	void AddTypeDecl(TypeAST type, TypeDeclAST* typeDecl) {
-		typeDeclMap.insert({ type, typeDecl });
+	void AddExprType(TypeAST type, ExprType exprType) {
+		typeDeclMap.insert({ type, exprType });
 	}
 }

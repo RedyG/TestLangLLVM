@@ -2,7 +2,7 @@
 #include <map>
 #include <optional>
 #include <string>
-
+#include "TypeDeclAST.h"
 
 std::string EraseChar(std::string_view str, char c) {
 	std::string result;

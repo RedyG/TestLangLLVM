@@ -62,5 +62,11 @@
     <ClInclude Include="CodeGenCtx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ExprType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeDeclAST.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

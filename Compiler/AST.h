@@ -5,24 +5,23 @@
 #include "CodeGenCtx.h"
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
-using namespace llvm;
-
-class TypeDeclAST;
+#include "TypeDeclAST.h"
+#include "ExprType.h"
 
 class ExprAST {
 public:
-	TypeDeclAST* Type;
+	ExprType Type = UnknownType;
 
 	// not using the visitor pattern because every passes return different types
 	// so I would have to deal with std::any or something
-	virtual Value* CodeGen(CodeGenCtx ctx) = 0;
-	TypeDeclAST* TypeCheck() {
+	virtual llvm::Value* CodeGen(CodeGenCtx ctx) = 0;
+	ExprType TypeCheck() {
 		Type = OnTypeCheck();
 		return Type;
 	}
 
 private:
-	virtual TypeDeclAST* OnTypeCheck() = 0;
+	virtual ExprType OnTypeCheck() = 0;
 };
 
 using ExprPtr = std::unique_ptr<ExprAST>;
@@ -36,7 +35,7 @@ public:
 	IntExpr(int value) : Value(value) {}
 
 private:
-	TypeDeclAST* OnTypeCheck() override;
+	ExprType OnTypeCheck() override;
 };
 
 class FloatExpr : public ExprAST {
@@ -48,7 +47,7 @@ public:
 	FloatExpr(double value) : Value(value) {}
 
 private:
-	TypeDeclAST* OnTypeCheck() override;
+	ExprType OnTypeCheck() override;
 };
 
 class BinOpExpr : public ExprAST {
@@ -57,12 +56,12 @@ public:
 	TokenType Op;
 	ExprPtr RHS;
 
-	Value* CodeGen(CodeGenCtx ctx) override;
+	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
 
 private:
-	TypeDeclAST* OnTypeCheck() override;
+	ExprType OnTypeCheck() override;
 };
 
 class TypeAST {
@@ -70,8 +69,6 @@ public:
 	std::string_view Name;
 
 	TypeAST(std::string_view name) : Name(name) {}
-
-	Type* CodeGen(LLVMContext& context);
 };
 
 struct TypeASTComparer
@@ -97,14 +94,13 @@ class VariableDeclStatement;
 class VariableExpr : public ExprAST {
 public:
 	VariableDeclStatement* Symbol;
-	std::string_view Name;
-
-	Value* CodeGen(CodeGenCtx ctx) override;
+	std::string_view Name; 
+	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 	VariableExpr(std::string_view name) : Name(name) {}
 
 private:
-	TypeDeclAST* OnTypeCheck() override;
+	ExprType OnTypeCheck() override;
 };
 
 class CallExpr : public ExprAST {
@@ -112,13 +108,13 @@ public:
 	ExprPtr Callee;
 	std::vector<ExprPtr> Params;
 
-	Value* CodeGen(CodeGenCtx ctx) override;
+	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 	CallExpr(ExprPtr callee, std::vector<ExprPtr> params)
 		: Callee(std::move(callee)), Params(std::move(params)) {}
 
 private:
-	TypeDeclAST* OnTypeCheck() override;
+	ExprType OnTypeCheck() override;
 };
 
 class UnaryExpr : public ExprAST {
@@ -126,12 +122,12 @@ public:
 	TokenType Op;
 	ExprPtr Expr;
 
-	Value* CodeGen(CodeGenCtx ctx) override;
+	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
 
 private:
-	TypeDeclAST* OnTypeCheck() override;
+	ExprType OnTypeCheck() override;
 };
 
 
@@ -150,7 +146,7 @@ public:
 	ProtoAST(VisibilityAST visibility, TypeAST type, std::string_view name, std::vector<VariableDeclStatement> params)
 		: Visibility(visibility), Type(type), Name(name), Params(std::move(params)) {}
 
-	void Register(Module& module);
+	void Register(llvm::Module& module);
 };
 
 class StatementAST {
@@ -204,7 +200,7 @@ public:
 class VariableDeclStatement: public StatementAST {
 public:
 	VariableAST Variable;
-	AllocaInst* Alloca;
+	llvm::AllocaInst* Alloca;
 
 	void TypeCheckStatement() override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
@@ -222,15 +218,6 @@ public:
 		: Visibility(visibility), Variable(std::move(variable)) {}
 };
 
-class TypeDeclAST {
-public:
-	VisibilityAST Visibility;
-	std::string_view Name;
-	std::vector<FuncAST> Methods;
-
-	TypeDeclAST(VisibilityAST visibility, std::string_view name, std::vector<FuncAST> methods)
-		: Visibility(visibility), Name(name), Methods(std::move(methods)) {}
-};
 
 class StructAST {
 public:
@@ -239,7 +226,7 @@ public:
 	
 	void TypeCheck();
 	void CodeGen(CodeGenCtx ctx);
-	void Register(Module& module);
+	void Register(llvm::Module& module);
 
 	StructAST(std::vector<FieldAST> fields, TypeDeclAST typeDecl)
 		: Fields(std::move(fields)), TypeDecl(std::move(typeDecl)) {}
@@ -251,7 +238,9 @@ public:
 
 	void TypeCheck();
 	void CodeGen(CodeGenCtx ctx);
-	void Register(Module& module);
+	void Register(llvm::Module& module);
 
 	ModuleAST(std::vector<StructAST> structs) : Structs(std::move(structs)) {}
 };
+
+TypeDeclAST* UnknownDecl = new TypeDeclAST(VisibilityAST::Public, "Unknown", {});

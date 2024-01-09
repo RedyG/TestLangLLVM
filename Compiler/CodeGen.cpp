@@ -2,6 +2,7 @@
 #include "TypeTable.h"
 #include <llvm/IR/Verifier.h>
 #include <fstream>
+using namespace llvm;
 
 Function* CurrentFunc;
 
@@ -15,9 +16,7 @@ Value* FloatExpr::CodeGen(CodeGenCtx ctx) {
 
 Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 	auto lhs = LHS->CodeGen(ctx);
-	std::cout << LHS->Type->Name;
 	auto rhs = RHS->CodeGen(ctx);
-	std::cout << RHS->Type->Name;
 	switch (Op) {
 	case TokenType::Add: return ctx.Builder.CreateFAdd(lhs, rhs, "addtmp");;
 	case TokenType::Sub: return nullptr;
@@ -40,20 +39,6 @@ Value* CallExpr::CodeGen(CodeGenCtx ctx) {
 
 Value* UnaryExpr::CodeGen(CodeGenCtx ctx) {
 	return Expr->CodeGen(ctx);
-}
-
-Type* TypeAST::CodeGen(LLVMContext& context) {
-	if (Name == "f64") {
-		return Type::getDoubleTy(context);
-	}
-	if (Name == "bool") {
-		return Type::getInt1Ty(context);
-	}
-	if (Name == "i32") {
-		return Type::getInt32Ty(context);
-	}
-
-	throw std::exception("invalid type");
 }
 
 void ReturnStatement::CodeGenStatement(CodeGenCtx ctx) {

@@ -1,16 +1,15 @@
 #pragma once
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
-using namespace llvm;
 
 struct CodeGenCtx {
 public:
-	Module& Module;
-	IRBuilder<>& Builder;
+	llvm::Module& Module;
+	llvm::IRBuilder<>& Builder;
 
-	LLVMContext& GetContext() {
+	llvm::LLVMContext& GetContext() {
 		return Module.getContext();
 	}
 
-	CodeGenCtx(llvm::Module& module, IRBuilder<>& builder) : Module(module), Builder(builder) {}
+	CodeGenCtx(llvm::Module& module, llvm::IRBuilder<>& builder) : Module(module), Builder(builder) {}
 };

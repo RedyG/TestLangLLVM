@@ -2,6 +2,9 @@
 #include "TypeTable.h"
 #include "Logger.h"
 #include <format>
+#include "TypeDeclAST.h"
+#include "ExprType.h"
+using namespace llvm;
 
 void ModuleAST::Register(Module& module) {
 	for (auto& structAST : Structs) {
@@ -17,10 +20,10 @@ void StructAST::Register(Module& module) {
 			types.push_back(field.Variable.Type.CodeGen(module.getContext()));
 		}
 		
-		auto type = StructType::create(types, TypeDecl.Name);
+		auto* type = StructType::create(types, TypeDecl.Name);
+		TypeTable::AddExprType(TypeAST(TypeDecl.Name), ExprType(&TypeDecl, (llvm::Type*)type));
 	}
 
-	TypeTable::AddTypeDecl(TypeAST(TypeDecl.Name), &TypeDecl);
 
 	for (auto& method : TypeDecl.Methods) {
 		method.Proto.Register(module);
@@ -47,3 +50,18 @@ void ProtoAST::Register(Module& module) {
 	for (auto& Arg : function->args())
 		Arg.setName(Params[i++].Variable.Name);
 }
+
+/*pub trait Iterator<T>
+* {
+*	pub T Next();
+* }
+
+
+
+for i in Range(0, i => i < 10, ref i => i++)
+for (int i = 0; i < 10; i++) {
+}
+
+
+
+*/
