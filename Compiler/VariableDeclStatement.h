@@ -11,7 +11,7 @@ public:
 	VariableAST Variable;
 	llvm::AllocaInst* Alloca;
 
-	void TypeCheckStatement() override;
+	void TypeCheckStatement(llvm::LLVMContext& context) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 
 	VariableDeclStatement(VariableAST variable) : Variable(std::move(variable)) {}

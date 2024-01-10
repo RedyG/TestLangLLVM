@@ -7,28 +7,14 @@
 using namespace llvm;
 
 void ModuleAST::Register(Module& module) {
-	for (auto& structAST : Structs) {
-		structAST.Register(module);
-	}
-}
-
-
-void StructAST::Register(Module& module) {
-	if (Fields.size() > 0) {
-		std::vector<Type*> types;
-		for (auto& field : Fields) {
-			types.push_back(field.Variable.Type.CodeGen(module.getContext()));
+	for (auto& decl : TypeDecls) {
+		for (auto& method : decl->Methods) {
+			method.Proto.Register(module);
 		}
-		
-		auto* type = StructType::create(types, Decl.Name);
-		TypeTable::AddExprType(TypeAST(Decl.Name), ExprType(&Decl, type));
-	}
-
-
-	for (auto& method : Decl.Methods) {
-		method.Proto.Register(module);
 	}
 }
+
+
 
 void ProtoAST::Register(Module& module) {
 	if (module.getFunction(Name)) {
@@ -39,10 +25,10 @@ void ProtoAST::Register(Module& module) {
 	std::vector<llvm::Type*> types;
 	types.reserve(Params.size());
 	for (auto& param : Params) {
-		types.push_back(param.Variable.Type.CodeGen(module.getContext()));
+		types.push_back(TypeTable::GetExprType(param.Variable.Type, module.getContext()).LLVMType);
 	}
 	FunctionType* functionType =
-		FunctionType::get(Type.CodeGen(module.getContext()), types, false);
+		FunctionType::get(TypeTable::GetExprType(Type, module.getContext()).LLVMType, types, false);
 	Function* function =
 		Function::Create(functionType, Function::ExternalLinkage, Name, module);
 	// Set names for all arguments.

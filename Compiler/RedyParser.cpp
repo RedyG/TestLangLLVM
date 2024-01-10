@@ -283,7 +283,7 @@ void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST
 
 std::vector<ProtoAST> protos;
 
-StructAST RedyParser::ParseStruct() {
+std::unique_ptr<StructAST> RedyParser::ParseStruct() {
 	auto visibility = ParseVisibility();
 	if (m_lexer.ConsumeIf(TokenType::Struct)) {
 		if (m_lexer.Current().Type == TokenType::Identifier) {
@@ -297,7 +297,7 @@ StructAST RedyParser::ParseStruct() {
 					protos.clear();
 					throw std::exception("Struct methods should have a body.");
 				}
-				return StructAST(std::move(fields), TypeDeclAST(visibility, name, std::move(methods)));
+				return std::make_unique<StructAST>(std::move(fields), visibility, name, std::move(methods));
 			}
 		}
 	}
@@ -309,13 +309,13 @@ ModuleAST RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
 
-	std::vector<StructAST> structs;
+	std::vector<std::unique_ptr<TypeDeclAST>> typeDecls;
 	
 	do {
-		structs.push_back(ParseStruct());
+		typeDecls.push_back(ParseStruct());
 	} while (m_lexer.Current().Type != TokenType::Invalid);
 
-	return std::move(ModuleAST(std::move(structs)));
+	return std::move(ModuleAST(std::move(typeDecls)));
 }
 
 /*

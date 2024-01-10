@@ -13,6 +13,6 @@ public:
 
 	FuncAST(ProtoAST proto, BlockOrExpr body) : Proto(std::move(proto)), Body(std::move(body)) {}
 
-	void TypeCheck();
+	void TypeCheck(llvm::LLVMContext& context);
 	void CodeGen(CodeGenCtx ctx);
 };

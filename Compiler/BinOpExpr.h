@@ -14,5 +14,5 @@ public:
 	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
 
 private:
-	ExprType OnTypeCheck() override;
+	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
 };

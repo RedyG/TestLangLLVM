@@ -11,12 +11,14 @@ Value* IntExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* FloatExpr::CodeGen(CodeGenCtx ctx) {
-	return ConstantFP::get(ctx.GetContext(), APFloat(Value));
+	return ConstantFP::get(TypeTable::GetExprType(TypeAST("f64"), ctx.GetContext()).LLVMType, APFloat(Value));
 }
 
 Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 	auto lhs = LHS->CodeGen(ctx);
 	auto rhs = RHS->CodeGen(ctx);
+	std::cout << lhs->getType() << "\n";
+	std::cout << rhs->getType() << "\n";
 	switch (Op) {
 	case TokenType::Add: return ctx.Builder.CreateFAdd(lhs, rhs, "addtmp");;
 	case TokenType::Sub: return nullptr;
@@ -29,7 +31,7 @@ Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
-	return ctx.Builder.CreateLoad(Symbol->Alloca->getType(), Symbol->Alloca);
+	return ctx.Builder.CreateLoad(TypeTable::GetExprType(Symbol->Variable.Type, ctx.GetContext()).LLVMType, Symbol->Alloca);
 }
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
@@ -87,13 +89,16 @@ void FuncAST::CodeGen(CodeGenCtx ctx) {
 }
 
 void StructAST::CodeGen(CodeGenCtx ctx) {
-	for (auto& method : TypeDecl.Methods) {
+	for (auto& method : Methods) {
 		method.CodeGen(ctx);
 	}
 }
 
 void ModuleAST::CodeGen(CodeGenCtx ctx) {
-	for (auto& structAST : Structs) {
-		structAST.CodeGen(ctx);
+	for (auto& decl : TypeDecls) {
+		// temporary fix
+		if (auto structAST = dynamic_cast<StructAST*>(decl.get())) {
+			structAST->CodeGen(ctx);
+		}
 	}
 }

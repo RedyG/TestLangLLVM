@@ -17,9 +17,9 @@ void InitModule() {
 	TheModule = std::make_unique<Module>("Test", *TheContext);
 }
 
-TypeDeclAST* f64Decl = new TypeDeclAST(VisibilityAST::Public, "f64", {});
-TypeDeclAST* boolDecl = new TypeDeclAST(VisibilityAST::Public, "bool", {});
-TypeDeclAST* i32Decl = new TypeDeclAST(VisibilityAST::Public, "i32", {});
+StructAST* f64Decl = new StructAST({}, VisibilityAST::Public, "f64", {});
+StructAST* boolDecl = new StructAST({}, VisibilityAST::Public, "bool", {});
+StructAST* i32Decl = new StructAST({}, VisibilityAST::Public, "i32", {});
 
 void InitDefaultTypes() {
 	TypeTable::AddExprType(TypeAST("f64"), ExprType(f64Decl, Type::getDoubleTy(*TheContext)));
@@ -51,6 +51,7 @@ void RunCode(std::unique_ptr<Module> module, std::unique_ptr<LLVMContext> contex
 
 void main() {
 	InitModule();
+	InitDefaultTypes();
 	try {
 		RedyParser parser;
 		/*auto defaultTypes = parser.Parse(R"(
@@ -73,7 +74,7 @@ void main() {
 
 		//defaultTypes.Register(*TheModule);
 		module.Register(*TheModule);
-		module.TypeCheck();
+		module.TypeCheck(*TheContext);
 		module.CodeGen(CodeGenCtx(*TheModule, Builder));
 		RunCode(std::move(TheModule), std::move(TheContext));
 	}

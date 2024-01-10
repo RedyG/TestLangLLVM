@@ -41,11 +41,11 @@
     <ClCompile Include="TypeCheck.cpp">
       <Filter>Passes</Filter>
     </ClCompile>
-    <ClCompile Include="Temp.h">
-      <Filter>AST</Filter>
-    </ClCompile>
     <ClCompile Include="ExprType.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GenLLVMType.cpp">
+      <Filter>Passes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

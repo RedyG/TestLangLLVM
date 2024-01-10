@@ -11,11 +11,11 @@ public:
 	// not using the visitor pattern because every passes return different types
 	// so I would have to deal with std::any or something
 	virtual llvm::Value* CodeGen(CodeGenCtx ctx) = 0;
-	ExprType TypeCheck() {
-		Type = OnTypeCheck();
+	ExprType TypeCheck(llvm::LLVMContext& context) {
+		Type = OnTypeCheck(context);
 		return Type;
 	}
 
 private:
-	virtual ExprType OnTypeCheck() = 0;
+	virtual ExprType OnTypeCheck(llvm::LLVMContext& context) = 0;
 };

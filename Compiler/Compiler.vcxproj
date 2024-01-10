@@ -136,8 +136,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ExprType.cpp" />
-    <ClCompile Include="Temp.h" />
     <ClCompile Include="CodeGen.cpp" />
+    <ClCompile Include="GenLLVMType.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="RedyParser.cpp" />

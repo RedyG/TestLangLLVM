@@ -22,12 +22,12 @@ VariableDeclStatement* FindSymbol(std::string_view name) {
 	return nullptr;
 }
 
-ExprType IntExpr::OnTypeCheck() {
-	return TypeTable::GetExprType(TypeAST("i32"));
+ExprType IntExpr::OnTypeCheck(llvm::LLVMContext& context) {
+	return TypeTable::GetExprType(TypeAST("i32"), context);
 }
 
-ExprType FloatExpr::OnTypeCheck() {
-	return TypeTable::GetExprType(TypeAST("f64"));
+ExprType FloatExpr::OnTypeCheck(llvm::LLVMContext& context) {
+	return TypeTable::GetExprType(TypeAST("f64"), context);
 }
 
 std::string_view GetOpName(TokenType op) {
@@ -39,9 +39,9 @@ std::string_view GetOpName(TokenType op) {
 	}
 }
 
-ExprType BinOpExpr::OnTypeCheck() {
-	auto lhs = LHS->TypeCheck();
-	auto rhs = RHS->TypeCheck();
+ExprType BinOpExpr::OnTypeCheck(llvm::LLVMContext& context) {
+	auto lhs = LHS->TypeCheck(context);
+	auto rhs = RHS->TypeCheck(context);
 
 	if (lhs.IsUnknown() || rhs.IsUnknown()) {
 		return UnknownType;
@@ -55,30 +55,30 @@ ExprType BinOpExpr::OnTypeCheck() {
 	return lhs;
 }
 
-ExprType VariableExpr::OnTypeCheck() {
+ExprType VariableExpr::OnTypeCheck(llvm::LLVMContext& context) {
 	Symbol = FindSymbol(Name);
 	if (Symbol == nullptr) {
 		Logger::Error(std::format("Tried to use undeclared variable {0}", Name));
 		return UnknownType;
 	}
-	return TypeTable::GetExprType(Symbol->Variable.Type);
+	return TypeTable::GetExprType(Symbol->Variable.Type, context);
 }
 
-ExprType CallExpr::OnTypeCheck() {
-	auto callee = Callee->TypeCheck();
+ExprType CallExpr::OnTypeCheck(llvm::LLVMContext& context) {
+	auto callee = Callee->TypeCheck(context);
 	return UnknownType; // todo
 }
 
-ExprType UnaryExpr::OnTypeCheck() {
-	auto type = Expr->TypeCheck();
-	if (type != TypeTable::GetExprType(TypeAST("bool"))) {
+ExprType UnaryExpr::OnTypeCheck(llvm::LLVMContext& context) {
+	auto type = Expr->TypeCheck(context);
+	if (type != TypeTable::GetExprType(TypeAST("bool"), context)) {
 		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type.Decl->Name));
 	}
 	return type;
 }
 
-void FuncAST::TypeCheck() {
-	ReturnType = TypeTable::GetExprType(Proto.Type);
+void FuncAST::TypeCheck(llvm::LLVMContext& context) {
+	ReturnType = TypeTable::GetExprType(Proto.Type, context);
 
 	for (auto& symbol : Proto.Params) {
 		symbols.push_back(&symbol);
@@ -86,7 +86,7 @@ void FuncAST::TypeCheck() {
 
 	if (std::holds_alternative<ExprPtr>(Body)) {
 		auto& expr = std::get<ExprPtr>(Body);
-		auto bodyType = expr->TypeCheck();
+		auto bodyType = expr->TypeCheck(context);
 
 		if (bodyType.IsUnknown())
 			return;
@@ -95,42 +95,39 @@ void FuncAST::TypeCheck() {
 			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Decl->Name, bodyType.Decl->Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
-		block->TypeCheckStatement();
+		block->TypeCheckStatement(context);
 	}
 
 	symbols.resize(symbols.size() - Proto.Params.size());
 }
 
-void StructAST::TypeCheck() {
-	for (auto& func : TypeDecl.Methods) {
-		func.TypeCheck();
+
+void ModuleAST::TypeCheck(llvm::LLVMContext& context) {
+	for (auto& decl : TypeDecls) {
+		for (auto& method : decl->Methods) {
+			method.TypeCheck(context);
+		}
 	}
 }
 
-void ModuleAST::TypeCheck() {
-	for (auto& structAST : Structs) {
-		structAST.TypeCheck();
-	}
-}
-
-void VariableDeclStatement::TypeCheckStatement() {
+void VariableDeclStatement::TypeCheckStatement(llvm::LLVMContext& context) {
 	symbols.push_back(this);
 	symbolsCount.top()++;
 }
 
-void BlockStatement::TypeCheckStatement() {
+void BlockStatement::TypeCheckStatement(llvm::LLVMContext& context) {
 	symbolsCount.push(0);
 
 	for (auto& statement : Statements) {
-		statement->TypeCheckStatement();
+		statement->TypeCheckStatement(context);
 	}
 
 	symbols.resize(symbols.size() - symbolsCount.top());
 	symbolsCount.pop();
 }
 
-void ReturnStatement::TypeCheckStatement() {
-	auto exprType = Expr->TypeCheck();
+void ReturnStatement::TypeCheckStatement(llvm::LLVMContext& context) {
+	auto exprType = Expr->TypeCheck(context);
 	if (exprType.IsUnknown())
 		return;
 

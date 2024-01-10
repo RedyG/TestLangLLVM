@@ -13,5 +13,5 @@ public:
 	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
 
 private:
-	ExprType OnTypeCheck() override;
+	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
 };

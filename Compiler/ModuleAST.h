@@ -8,11 +8,11 @@ namespace llvm {
 
 class ModuleAST {
 public:
-	std::vector<StructAST> Structs;
+	std::vector<std::unique_ptr<TypeDeclAST>> TypeDecls;
 
-	void TypeCheck();
+	void TypeCheck(llvm::LLVMContext& context);
 	void CodeGen(CodeGenCtx ctx);
 	void Register(llvm::Module& module);
 
-	ModuleAST(std::vector<StructAST> structs) : Structs(std::move(structs)) {}
+	ModuleAST(std::vector<std::unique_ptr<TypeDeclAST>> typeDecls) : TypeDecls(std::move(typeDecls)) {}
 };

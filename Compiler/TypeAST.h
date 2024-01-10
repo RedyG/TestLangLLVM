@@ -1,17 +1,22 @@
 #pragma once
 #include <string>
 
+
 class TypeAST {
 public:
 	std::string_view Name;
 
 	TypeAST(std::string_view name) : Name(name) {}
+
+
+	bool operator == (const TypeAST& other) const {
+		return Name == other.Name;
+	}
 };
 
-struct TypeASTComparer
-{
-	bool operator() (const TypeAST& lhs, const TypeAST& rhs) const
-	{
-		return lhs.Name < rhs.Name;
-	}
+template <>
+struct std::hash<TypeAST> {
+    std::size_t operator()(const TypeAST& k) const {
+		return hash<string_view>()(k.Name);
+    }
 };

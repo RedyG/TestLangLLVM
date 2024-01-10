@@ -10,5 +10,5 @@ public:
 	IntExpr(int value) : Value(value) {}
 
 private:
-	ExprType OnTypeCheck() override;
+	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
 };

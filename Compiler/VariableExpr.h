@@ -15,5 +15,5 @@ public:
 	VariableExpr(std::string_view name) : Name(name) {}
 
 private:
-	ExprType OnTypeCheck() override;
+	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
 };

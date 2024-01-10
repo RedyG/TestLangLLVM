@@ -6,7 +6,7 @@ class ReturnStatement : public StatementAST {
 public:
 	ExprPtr Expr;
 
-	void TypeCheckStatement() override;
+	void TypeCheckStatement(llvm::LLVMContext& context) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 
 	ReturnStatement(ExprPtr expr) : Expr(std::move(expr)) {}

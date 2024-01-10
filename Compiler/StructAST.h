@@ -2,19 +2,14 @@
 #include "TypeDeclAST.h"
 #include "FieldAST.h"
 #include <vector>
-namespace llvm {
-	class Module;
-}
 
-class StructAST {
+class StructAST : public TypeDeclAST {
 public:
-	TypeDeclAST TypeDecl;
 	std::vector<FieldAST> Fields;
 
-	void TypeCheck();
 	void CodeGen(CodeGenCtx ctx);
-	void Register(llvm::Module& module);
 
-	StructAST(std::vector<FieldAST> fields, TypeDeclAST typeDecl)
-		: Fields(std::move(fields)), TypeDecl(std::move(typeDecl)) {}
+	llvm::Type* GenLLVMType(llvm::LLVMContext& context) override;
+
+	StructAST(std::vector<FieldAST> fields, VisibilityAST visibility, std::string_view name, std::vector<FuncAST> methods) : TypeDeclAST(visibility, name, std::move(methods)) {}
 };
