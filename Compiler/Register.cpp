@@ -20,12 +20,12 @@ void StructAST::Register(Module& module) {
 			types.push_back(field.Variable.Type.CodeGen(module.getContext()));
 		}
 		
-		auto* type = StructType::create(types, TypeDecl.Name);
-		TypeTable::AddExprType(TypeAST(TypeDecl.Name), ExprType(&TypeDecl, (llvm::Type*)type));
+		auto* type = StructType::create(types, Decl.Name);
+		TypeTable::AddExprType(TypeAST(Decl.Name), ExprType(&Decl, type));
 	}
 
 
-	for (auto& method : TypeDecl.Methods) {
+	for (auto& method : Decl.Methods) {
 		method.Proto.Register(module);
 	}
 }

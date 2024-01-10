@@ -72,7 +72,7 @@ ExprType CallExpr::OnTypeCheck() {
 ExprType UnaryExpr::OnTypeCheck() {
 	auto type = Expr->TypeCheck();
 	if (type != TypeTable::GetExprType(TypeAST("bool"))) {
-		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type.Name));
+		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type.Decl->Name));
 	}
 	return type;
 }
@@ -92,7 +92,7 @@ void FuncAST::TypeCheck() {
 			return;
 
 		if (bodyType != ReturnType)
-			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Name, bodyType.Name));
+			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Decl->Name, bodyType.Decl->Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
 		block->TypeCheckStatement();
@@ -135,5 +135,5 @@ void ReturnStatement::TypeCheckStatement() {
 		return;
 
 	if (exprType != ReturnType)
-		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Name, exprType.Name));
+		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Decl->Name, exprType.Decl->Name));
 }

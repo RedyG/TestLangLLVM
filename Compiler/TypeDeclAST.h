@@ -1,7 +1,8 @@
+#pragma once
 #include <string>
 #include <vector>
-enum class VisibilityAST;
-class FuncAST;
+#include "VisibilityAST.h"
+#include "FuncAST.h"
 
 class TypeDeclAST {
 public:

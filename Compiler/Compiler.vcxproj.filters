@@ -9,9 +9,11 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="AST">
+      <UniqueIdentifier>{8e76918f-9a7a-48ee-9a4c-50b0103e784a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Passes">
+      <UniqueIdentifier>{fe22c8b8-4147-4d7e-a0b1-be6ec94c6499}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -24,19 +26,25 @@
     <ClCompile Include="RedyParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CodeGen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TypeTable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TypeCheck.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CodeGen.cpp">
+      <Filter>Passes</Filter>
+    </ClCompile>
     <ClCompile Include="Register.cpp">
+      <Filter>Passes</Filter>
+    </ClCompile>
+    <ClCompile Include="TypeCheck.cpp">
+      <Filter>Passes</Filter>
+    </ClCompile>
+    <ClCompile Include="Temp.h">
+      <Filter>AST</Filter>
+    </ClCompile>
+    <ClCompile Include="ExprType.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -48,9 +56,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RedyParser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AST.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TypeTable.h">
@@ -65,8 +70,77 @@
     <ClInclude Include="ExprType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="BinOpExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockStatement.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="CallExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ExprAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ExprStatement.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="FloatExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="IntExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ProtoAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ReturnStatement.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="StatementAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="StructAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="UnaryExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="VariableAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="VariableDeclStatement.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="VariableExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="VisibilityAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ExprPtr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
     <ClInclude Include="TypeDeclAST.h">
-      <Filter>Source Files</Filter>
+      <Filter>AST</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

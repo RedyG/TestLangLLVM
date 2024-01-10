@@ -135,6 +135,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ExprType.cpp" />
+    <ClCompile Include="Temp.h" />
     <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Logger.cpp" />
@@ -146,10 +148,32 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
+    <ClInclude Include="BinOpExpr.h" />
+    <ClInclude Include="BlockStatement.h" />
+    <ClInclude Include="CallExpr.h" />
+    <ClInclude Include="ExprAST.h" />
+    <ClInclude Include="ExprPtr.h" />
+    <ClInclude Include="ExprStatement.h" />
+    <ClInclude Include="FieldAST.h" />
+    <ClInclude Include="FloatExpr.h" />
+    <ClInclude Include="FuncAST.h" />
+    <ClInclude Include="IntExpr.h" />
+    <ClInclude Include="ModuleAST.h" />
+    <ClInclude Include="ProtoAST.h" />
+    <ClInclude Include="ReturnStatement.h" />
+    <ClInclude Include="StatementAST.h" />
+    <ClInclude Include="StructAST.h" />
+    <ClInclude Include="TypeAST.h" />
+    <ClInclude Include="UnaryExpr.h" />
+    <ClInclude Include="VariableAST.h" />
+    <ClInclude Include="VariableDeclStatement.h" />
+    <ClInclude Include="VariableExpr.h" />
+    <ClInclude Include="VisibilityAST.h" />
     <ClInclude Include="CodeGenCtx.h" />
     <ClInclude Include="ExprType.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="Test.h" />
     <ClInclude Include="RedyParser.h" />
     <ClInclude Include="RedyLexer.h" />
     <ClInclude Include="TypeDeclAST.h" />

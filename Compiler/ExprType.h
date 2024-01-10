@@ -1,10 +1,9 @@
 #pragma once
-#include <string>
-#pragma warning(disable:4146)
-#include "llvm/IR/IRBuilder.h"
-#include "TypeDeclAST.h"
+namespace llvm {
+	class Type;
+}
+class TypeDeclAST;
 
-extern TypeDeclAST* UnknownDecl;
 
 struct ExprType {
 public:
@@ -12,15 +11,10 @@ public:
 	TypeDeclAST* Decl;
 	llvm::Type* LLVMType;
 
-	bool IsUnknown() {
-		return LLVMType == nullptr;
-	}
+	bool IsUnknown();
 
-	ExprType(TypeDeclAST* decl, llvm::Type* llvmType) : Decl(decl), LLVMType(llvmType) {}
+	ExprType(TypeDeclAST* decl, llvm::Type* llvmType);
 
-	bool operator == (ExprType that) {
-		return Decl->Name == that.Decl->Name && LLVMType == that.LLVMType;
-	}
+	bool operator == (ExprType that);
 };
-
-const ExprType UnknownType = ExprType(UnknownDecl, nullptr);
+extern ExprType UnknownType;
