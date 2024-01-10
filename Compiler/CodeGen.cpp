@@ -57,8 +57,11 @@ void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
 }
 
 void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
-	auto value = Variable.DefaultValue->CodeGen(ctx);
-	Alloca = ctx.Builder.CreateAlloca(value->getType());
+	Alloca = ctx.Builder.CreateAlloca(TypeTable::GetExprType(Variable.Type, ctx.GetContext()).LLVMType);
+	if (Variable.DefaultValue) {
+		auto value = Variable.DefaultValue->CodeGen(ctx);
+		ctx.Builder.CreateStore(value, Alloca);
+	}
 }
 
 
