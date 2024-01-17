@@ -36,7 +36,11 @@ Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
 	Function* func = ctx.Module.getFunction(dynamic_cast<VariableExpr&>(*Callee).Name);
-	return ctx.Builder.CreateCall(func, {}, "calltmp");
+	std::vector<Value*> params;
+	for (auto& param : Params) {
+		params.push_back(param->CodeGen(ctx));
+	}
+	return ctx.Builder.CreateCall(func, params, "calltmp");
 }
 
 Value* UnaryExpr::CodeGen(CodeGenCtx ctx) {

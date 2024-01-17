@@ -48,7 +48,7 @@ ExprType BinOpExpr::OnTypeCheck(llvm::LLVMContext& context) {
 	}
 
 	if (lhs != rhs) {
-		Logger::Error(std::format("Couldn't {0} values of type {1} and {2}", GetOpName(Op), lhs.Decl->Name, rhs.Decl->Name));
+		Logger::Error(std::format("Couldn't {0} values of type {1} and {2}", GetOpName(Op), lhs.GetDecl()->Name, rhs.GetDecl()->Name));
 		return UnknownType;
 	}
 
@@ -65,14 +65,15 @@ ExprType VariableExpr::OnTypeCheck(llvm::LLVMContext& context) {
 }
 
 ExprType CallExpr::OnTypeCheck(llvm::LLVMContext& context) {
-	auto callee = Callee->TypeCheck(context);
-	return UnknownType; // todo
+	for (auto& param : Params) {
+
+	}
 }
 
 ExprType UnaryExpr::OnTypeCheck(llvm::LLVMContext& context) {
 	auto type = Expr->TypeCheck(context);
 	if (type != TypeTable::GetExprType(TypeAST("bool"), context)) {
-		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type.Decl->Name));
+		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type.GetDecl()->Name));
 	}
 	return type;
 }
@@ -92,7 +93,7 @@ void FuncAST::TypeCheck(llvm::LLVMContext& context) {
 			return;
 
 		if (bodyType != ReturnType)
-			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Decl->Name, bodyType.Decl->Name));
+			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.GetDecl()->Name, bodyType.GetDecl()->Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
 		block->TypeCheckStatement(context);
@@ -132,5 +133,5 @@ void ReturnStatement::TypeCheckStatement(llvm::LLVMContext& context) {
 		return;
 
 	if (exprType != ReturnType)
-		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.Decl->Name, exprType.Decl->Name));
+		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType.GetDecl()->Name, exprType.GetDecl()->Name));
 }

@@ -7,14 +7,15 @@ class TypeDeclAST;
 
 struct ExprType {
 public:
-
-	TypeDeclAST* Decl;
 	llvm::Type* LLVMType;
 
-	bool IsUnknown();
+	bool IsUnknown(); 
+	TypeDeclAST* GetDecl();
 
 	ExprType(TypeDeclAST* decl, llvm::Type* llvmType);
 
 	bool operator == (ExprType that);
+private:
+	TypeDeclAST* Decl;
 };
 extern ExprType UnknownType;

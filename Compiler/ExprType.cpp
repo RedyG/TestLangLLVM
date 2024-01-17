@@ -16,5 +16,9 @@ bool ExprType::operator == (ExprType that) {
 	return Decl->Name == that.Decl->Name && LLVMType == that.LLVMType;
 }
 
+TypeDeclAST* ExprType::GetDecl() {
+	return Decl;
+}
+
 StructAST* UnknownDecl = new StructAST({}, VisibilityAST::Public, "Unknown", {});
 ExprType UnknownType = ExprType(UnknownDecl, nullptr);

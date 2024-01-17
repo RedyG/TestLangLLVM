@@ -66,9 +66,9 @@ void main() {
 
 				f64 main() {
 					f64 a = 2.0;
-					return 1.0 + a;
+					return 1.0 + a + other(a);
 				}
-				f64 other() => 4.0 + 2.0;
+				f64 other(f64 a) => a + 2.0;
 			} 
 		)");
 
@@ -92,11 +92,6 @@ void other(Vec<int> a) {
 
 }
 
-main() {
-	Vec<int> b = [];
-	other();
-	b.Push(3);
-}
 
 
 

@@ -4,6 +4,7 @@
 using namespace llvm;
 
 std::unordered_map<TypeAST, ExprType> typeTable;
+std::unordered_map<std::string_view, int> a;
 
 namespace TypeTable {
 	ExprType GetExprType(TypeAST type, LLVMContext& context) {
@@ -14,7 +15,7 @@ namespace TypeTable {
 		}
 
 		if (exprType->second.LLVMType == nullptr) {
-			exprType->second.LLVMType = exprType->second.Decl->GenLLVMType(context);
+			exprType->second.LLVMType = exprType->second.GetDecl()->GenLLVMType(context);
 		}
 		return exprType->second;
 	}
