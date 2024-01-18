@@ -1,8 +1,8 @@
 #pragma once
 #include "TypeAST.h"
 #include <string>
-#include "ExprAST.h"
 #include "ExprPtr.h"
+#include "ExprAST.h"
 
 class VariableAST {
 public:
@@ -10,6 +10,5 @@ public:
 	std::string_view Name;
 	ExprPtr DefaultValue;
 
-	VariableAST(TypeAST type, std::string_view name, ExprPtr defaultValue = nullptr)
-		: Type(type), Name(name), DefaultValue(std::move(defaultValue)) {}
+	VariableAST(TypeAST type, std::string_view name, ExprPtr defaultValue = nullptr);
 };

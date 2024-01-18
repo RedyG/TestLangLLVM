@@ -305,17 +305,19 @@ std::unique_ptr<StructAST> RedyParser::ParseStruct() {
 	throw std::exception("invalid struct definition");
 }
 
-ModuleAST RedyParser::Parse(std::string_view input) {
+RedyModule&& RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
 
-	std::vector<std::unique_ptr<TypeDeclAST>> typeDecls;
+	RedyModule module(std::unordered_map<TypeAST, std::unique_ptr<TypeDeclAST>> {});
 	
 	do {
-		typeDecls.push_back(ParseStruct());
+		auto structAST = ParseStruct();
+		auto name = structAST->Name;
+		module.AddType(name, std::move(structAST));
 	} while (m_lexer.Current().Type != TokenType::Invalid);
 
-	return std::move(ModuleAST(std::move(typeDecls)));
+	return std::move(module);
 }
 
 /*

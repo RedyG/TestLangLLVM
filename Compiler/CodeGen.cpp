@@ -1,5 +1,4 @@
 #include "AST.h"
-#include "TypeTable.h"
 #include <llvm/IR/Verifier.h>
 #include <fstream>
 using namespace llvm;
@@ -7,11 +6,11 @@ using namespace llvm;
 Function* CurrentFunc;
 
 Value* IntExpr::CodeGen(CodeGenCtx ctx) {
-	return ConstantInt::get(IntegerType::getInt32Ty(ctx.GetContext()), Value, true);
+	return ConstantInt::get(IntegerType::getInt32Ty(ctx.GetLLVMCtx()), Value, true);
 }
 
 Value* FloatExpr::CodeGen(CodeGenCtx ctx) {
-	return ConstantFP::get(TypeTable::GetExprType(TypeAST("f64"), ctx.GetContext()).LLVMType, APFloat(Value));
+	return ConstantFP::get(ctx.RedyMod.GetType(TypeAST("f64"), ctx.GetLLVMCtx())->LLVMType, APFloat(Value));
 }
 
 Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
@@ -31,11 +30,11 @@ Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
-	return ctx.Builder.CreateLoad(TypeTable::GetExprType(Symbol->Variable.Type, ctx.GetContext()).LLVMType, Symbol->Alloca);
+	return ctx.Builder.CreateLoad(ctx.RedyMod.GetType(Symbol->Variable.Type, ctx.GetLLVMCtx())->LLVMType, Symbol->Alloca);
 }
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
-	Function* func = ctx.Module.getFunction(dynamic_cast<VariableExpr&>(*Callee).Name);
+	Function* func = ctx.Mod.getFunction(dynamic_cast<VariableExpr&>(*Callee).Name);
 	std::vector<Value*> params;
 	for (auto& param : Params) {
 		params.push_back(param->CodeGen(ctx));
@@ -52,7 +51,7 @@ void ReturnStatement::CodeGenStatement(CodeGenCtx ctx) {
 }
 
 void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
-	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetContext(), "entry", CurrentFunc);
+	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", CurrentFunc);
 	ctx.Builder.SetInsertPoint(basicBlock);
 
 	for (auto& statement : Statements) {
@@ -61,7 +60,7 @@ void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
 }
 
 void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
-	Alloca = ctx.Builder.CreateAlloca(TypeTable::GetExprType(Variable.Type, ctx.GetContext()).LLVMType);
+	Alloca = ctx.Builder.CreateAlloca(ctx.RedyMod.GetType(Variable.Type, ctx.GetLLVMCtx())->LLVMType);
 	if (Variable.DefaultValue) {
 		auto value = Variable.DefaultValue->CodeGen(ctx);
 		ctx.Builder.CreateStore(value, Alloca);
@@ -71,14 +70,14 @@ void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
 
 
 void FuncAST::CodeGen(CodeGenCtx ctx) {
-	CurrentFunc = ctx.Module.getFunction(Proto.Name);
+	CurrentFunc = ctx.Mod.getFunction(Proto.Name);
 	if (!CurrentFunc)
 		throw std::exception("Function not found");
 
 	if (std::holds_alternative<ExprPtr>(Body)) {
 		if (Value* RetVal = std::get<ExprPtr>(Body)->CodeGen(ctx)) {
 
-			BasicBlock* BB = BasicBlock::Create(ctx.GetContext(), "entry", CurrentFunc);
+			BasicBlock* BB = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", CurrentFunc);
 			ctx.Builder.SetInsertPoint(BB);
 
 			ctx.Builder.CreateRet(RetVal);
@@ -101,10 +100,10 @@ void StructAST::CodeGen(CodeGenCtx ctx) {
 	}
 }
 
-void ModuleAST::CodeGen(CodeGenCtx ctx) {
-	for (auto& decl : TypeDecls) {
+void RedyModule::CodeGen(CodeGenCtx ctx) {
+	for (auto& entry : TypeDecls) {
 		// temporary fix
-		if (auto structAST = dynamic_cast<StructAST*>(decl.get())) {
+		if (auto structAST = dynamic_cast<StructAST*>(entry.second.get())) {
 			structAST->CodeGen(ctx);
 		}
 	}

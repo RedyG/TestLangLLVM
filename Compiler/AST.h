@@ -7,7 +7,7 @@
 #include "FloatExpr.h"
 #include "FuncAST.h"
 #include "IntExpr.h"
-#include "ModuleAST.h"
+#include "RedyModule.h"
 #include "ProtoAST.h"
 #include "ReturnStatement.h"
 #include "StatementAST.h"

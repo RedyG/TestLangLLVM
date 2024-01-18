@@ -1,15 +1,17 @@
 #pragma once
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
+class RedyModule;
 
 struct CodeGenCtx {
 public:
-	llvm::Module& Module;
+	RedyModule& RedyMod;
+	llvm::Module& Mod;
 	llvm::IRBuilder<>& Builder;
 
-	llvm::LLVMContext& GetContext() {
-		return Module.getContext();
+	llvm::LLVMContext& GetLLVMCtx() {
+		return Mod.getContext();
 	}
 
-	CodeGenCtx(llvm::Module& module, llvm::IRBuilder<>& builder) : Module(module), Builder(builder) {}
+	CodeGenCtx(llvm::Module& module, RedyModule& redyModule, llvm::IRBuilder<>& builder) : Mod(module), Builder(builder), RedyMod(redyModule) {}
 };

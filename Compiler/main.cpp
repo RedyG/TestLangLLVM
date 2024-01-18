@@ -1,6 +1,6 @@
 #include <iostream>
+#include "Modules.h"
 #include "RedyParser.h"
-#include "TypeTable.h"
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
@@ -17,14 +17,18 @@ void InitModule() {
 	TheModule = std::make_unique<Module>("Test", *TheContext);
 }
 
-StructAST* f64Decl = new StructAST({}, VisibilityAST::Public, "f64", {});
-StructAST* boolDecl = new StructAST({}, VisibilityAST::Public, "bool", {});
-StructAST* i32Decl = new StructAST({}, VisibilityAST::Public, "i32", {});
+void InitDefaultTypes(RedyModule& module) {
+	auto f64Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "f64", std::vector<FuncAST> {});
+	f64Decl->LLVMType = Type::getDoubleTy(*TheContext);
+	auto boolDecl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "bool", std::vector<FuncAST> {});
+	boolDecl->LLVMType = Type::getInt1Ty(*TheContext);
+	auto i32Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "i32", std::vector<FuncAST> {});
+	i32Decl->LLVMType = Type::getInt32Ty(*TheContext);
 
-void InitDefaultTypes() {
-	TypeTable::AddExprType(TypeAST("f64"), ExprType(f64Decl, Type::getDoubleTy(*TheContext)));
-	TypeTable::AddExprType(TypeAST("bool"), ExprType(boolDecl, Type::getInt1Ty(*TheContext)));
-	TypeTable::AddExprType(TypeAST("i32"), ExprType(i32Decl, Type::getInt32Ty(*TheContext)));
+
+	module.AddType(TypeAST("f64"), std::move(f64Decl));
+	module.AddType(TypeAST("bool"), std::move(boolDecl));
+	module.AddType(TypeAST("i32"), std::move(i32Decl));
 }
 
 void RunCode(std::unique_ptr<Module> module, std::unique_ptr<LLVMContext> context) {
@@ -51,7 +55,6 @@ void RunCode(std::unique_ptr<Module> module, std::unique_ptr<LLVMContext> contex
 
 void main() {
 	InitModule();
-	InitDefaultTypes();
 	try {
 		RedyParser parser;
 		/*auto defaultTypes = parser.Parse(R"(
@@ -60,7 +63,7 @@ void main() {
 			pub struct i32 {}
 		)");*/
 
-		auto module = parser.Parse(R"(
+		auto&& module = std::move(parser.Parse(R"(
 			pub struct TestStruct {
 				i32 Test;
 
@@ -70,12 +73,16 @@ void main() {
 				}
 				f64 other(f64 a) => a + 2.0;
 			} 
-		)");
+		)"));
+
+		//AddModule("Main", std::move(module));
+
+		InitDefaultTypes(module);
 
 		//defaultTypes.Register(*TheModule);
 		module.Register(*TheModule);
 		module.TypeCheck(*TheContext);
-		module.CodeGen(CodeGenCtx(*TheModule, Builder));
+		module.CodeGen(CodeGenCtx(*TheModule, module, Builder));
 		RunCode(std::move(TheModule), std::move(TheContext));
 	}
 	catch (const std::exception& e) {
@@ -83,6 +90,7 @@ void main() {
 		throw;
 	}
 }
+
 
 
 /*

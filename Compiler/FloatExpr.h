@@ -10,5 +10,5 @@ public:
 	FloatExpr(double value) : Value(value) {}
 
 private:
-	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
 };

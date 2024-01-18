@@ -1,22 +1,20 @@
 #include "AST.h"
-#include "TypeTable.h"
 #include "Logger.h"
 #include <format>
 #include "TypeDeclAST.h"
-#include "ExprType.h"
 using namespace llvm;
 
-void ModuleAST::Register(Module& module) {
-	for (auto& decl : TypeDecls) {
-		for (auto& method : decl->Methods) {
-			method.Proto.Register(module);
+void RedyModule::Register(Module& module) {
+	for (auto& entry : TypeDecls) {
+		for (auto& method : entry.second->Methods) {
+			method.Proto.Register(*this, module);
 		}
 	}
 }
 
 
 
-void ProtoAST::Register(Module& module) {
+void ProtoAST::Register(RedyModule& redyModule, Module& module) {
 	if (module.getFunction(Name)) {
 		Logger::Error(std::format("Function with name \"{0}\" already exists", Name));
 		return;
@@ -25,10 +23,10 @@ void ProtoAST::Register(Module& module) {
 	std::vector<llvm::Type*> types;
 	types.reserve(Params.size());
 	for (auto& param : Params) {
-		types.push_back(TypeTable::GetExprType(param.Variable.Type, module.getContext()).LLVMType);
+		types.push_back(redyModule.GetType(param.Variable.Type, module.getContext())->LLVMType);
 	}
 	FunctionType* functionType =
-		FunctionType::get(TypeTable::GetExprType(Type, module.getContext()).LLVMType, types, false);
+		FunctionType::get(redyModule.GetType(Type, module.getContext())->LLVMType, types, false);
 	Function* function =
 		Function::Create(functionType, Function::ExternalLinkage, Name, module);
 	// Set names for all arguments.

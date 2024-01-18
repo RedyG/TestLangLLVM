@@ -1,21 +1,19 @@
 #pragma once
-#include "ExprType.h"
+#include "UnknownType.h"
 #include "CodeGenCtx.h"
+class TypeDeclAST;
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
 
 class ExprAST {
 public:
-	ExprType Type = UnknownType;
+	TypeDeclAST* TypeDecl = UnknownType;
 
 	// not using the visitor pattern because every passes return different types
 	// so I would have to deal with std::any or something
 	virtual llvm::Value* CodeGen(CodeGenCtx ctx) = 0;
-	ExprType TypeCheck(llvm::LLVMContext& context) {
-		Type = OnTypeCheck(context);
-		return Type;
-	}
+	TypeDeclAST* TypeCheck(RedyModule& module, llvm::LLVMContext& context);
 
 private:
-	virtual ExprType OnTypeCheck(llvm::LLVMContext& context) = 0;
+	virtual TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) = 0;
 };

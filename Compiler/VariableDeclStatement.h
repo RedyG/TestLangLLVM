@@ -9,9 +9,9 @@ namespace llvm {
 class VariableDeclStatement : public StatementAST {
 public:
 	VariableAST Variable;
-	llvm::AllocaInst* Alloca;
+	llvm::AllocaInst* Alloca = nullptr;
 
-	void TypeCheckStatement(llvm::LLVMContext& context) override;
+	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 
 	VariableDeclStatement(VariableAST variable) : Variable(std::move(variable)) {}

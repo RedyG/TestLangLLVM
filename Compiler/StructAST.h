@@ -9,7 +9,7 @@ public:
 
 	void CodeGen(CodeGenCtx ctx);
 
-	llvm::Type* GenLLVMType(llvm::LLVMContext& context) override;
+	void GenLLVMType(llvm::LLVMContext& context, RedyModule& module) override;
 
 	StructAST(std::vector<FieldAST> fields, VisibilityAST visibility, std::string_view name, std::vector<FuncAST> methods) : TypeDeclAST(visibility, name, std::move(methods)) {}
 };

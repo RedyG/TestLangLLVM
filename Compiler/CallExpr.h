@@ -14,5 +14,5 @@ public:
 		: Callee(std::move(callee)), Params(std::move(params)) {}
 
 private:
-	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
 };

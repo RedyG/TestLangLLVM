@@ -5,7 +5,7 @@
 
 class StatementAST {
 public:
-	virtual void TypeCheckStatement(llvm::LLVMContext& context) = 0;
+	virtual void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) = 0;
 	virtual void CodeGenStatement(CodeGenCtx ctx) = 0;
 };
 

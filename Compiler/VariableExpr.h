@@ -15,5 +15,6 @@ public:
 	VariableExpr(std::string_view name) : Name(name) {}
 
 private:
-	ExprType OnTypeCheck(llvm::LLVMContext& context) override;
+
+	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
 };

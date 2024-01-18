@@ -135,16 +135,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ExprType.cpp" />
     <ClCompile Include="CodeGen.cpp" />
+    <ClCompile Include="ExprAST.cpp" />
     <ClCompile Include="GenLLVMType.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Modules.cpp" />
+    <ClCompile Include="RedyModule.cpp" />
     <ClCompile Include="RedyParser.cpp" />
     <ClCompile Include="RedyLexer.cpp" />
     <ClCompile Include="Register.cpp" />
     <ClCompile Include="TypeCheck.cpp" />
-    <ClCompile Include="TypeTable.cpp" />
+    <ClCompile Include="UnknownType.cpp" />
+    <ClCompile Include="VariableAST.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
@@ -158,26 +161,26 @@
     <ClInclude Include="FloatExpr.h" />
     <ClInclude Include="FuncAST.h" />
     <ClInclude Include="IntExpr.h" />
-    <ClInclude Include="ModuleAST.h" />
+    <ClInclude Include="RedyModule.h" />
+    <ClInclude Include="Modules.h" />
     <ClInclude Include="ProtoAST.h" />
     <ClInclude Include="ReturnStatement.h" />
     <ClInclude Include="StatementAST.h" />
     <ClInclude Include="StructAST.h" />
     <ClInclude Include="TypeAST.h" />
     <ClInclude Include="UnaryExpr.h" />
+    <ClInclude Include="UnknownType.h" />
     <ClInclude Include="VariableAST.h" />
     <ClInclude Include="VariableDeclStatement.h" />
     <ClInclude Include="VariableExpr.h" />
     <ClInclude Include="VisibilityAST.h" />
     <ClInclude Include="CodeGenCtx.h" />
-    <ClInclude Include="ExprType.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Test.h" />
     <ClInclude Include="RedyParser.h" />
     <ClInclude Include="RedyLexer.h" />
     <ClInclude Include="TypeDeclAST.h" />
-    <ClInclude Include="TypeTable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
