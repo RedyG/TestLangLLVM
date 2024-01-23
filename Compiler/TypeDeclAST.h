@@ -8,17 +8,16 @@
 
 class TypeDeclAST {
 public:
+	std::unordered_map<std::string_view, FuncAST> Methods;
 	llvm::Type* LLVMType = nullptr;
 	VisibilityAST Visibility;
 	std::string_view Name;
-	std::vector<FuncAST> Methods;
 
-	TypeDeclAST(VisibilityAST visibility, std::string_view name, std::vector<FuncAST> methods)
-		: Visibility(visibility), Name(name), Methods(std::move(methods)) {}
+	TypeDeclAST(VisibilityAST visibility, std::string_view name, std::unordered_map<std::string_view, FuncAST> methods);
 
-	bool IsUnknown() {
-		return LLVMType == nullptr;
-	}
+	bool IsUnknown();
+
+	FuncAST* GetMethod(std::string_view name);
 
 	virtual void GenLLVMType(llvm::LLVMContext& context, RedyModule& module) = 0;
 };

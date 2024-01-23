@@ -8,6 +8,7 @@ using BlockOrExpr = std::variant<ExprPtr, std::unique_ptr<BlockStatement>>;
 
 class FuncAST {
 public:
+	Function* LLVMFunc = nullptr;
 	ProtoAST Proto;
 	BlockOrExpr Body;
 

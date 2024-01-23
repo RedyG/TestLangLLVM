@@ -6,8 +6,8 @@
 using namespace llvm;
 
 TypeDeclAST* RedyModule::GetType(TypeAST typeAST, LLVMContext& context) {
-	auto type = TypeDecls.find(typeAST);
-	if (type == TypeDecls.end()) {
+	auto type = m_typeDecls.find(typeAST);
+	if (type == m_typeDecls.end()) {
 		Logger::Error(std::format("The type {0} doesn't exist.", type->second->Name));
 		return UnknownType;
 	}
@@ -19,7 +19,17 @@ TypeDeclAST* RedyModule::GetType(TypeAST typeAST, LLVMContext& context) {
 }
 
 void RedyModule::AddType(TypeAST typeAST, std::unique_ptr<TypeDeclAST> typeDecl) {
-	TypeDecls.insert(std::move(std::make_pair( typeAST, std::move(typeDecl) )));
+	m_typeDecls.emplace(typeAST, std::move(typeDecl));
 }
 
-RedyModule::RedyModule(std::unordered_map<TypeAST, std::unique_ptr<TypeDeclAST>> typeDecls) : TypeDecls(std::move(typeDecls)) {}
+void RedyModule::AddFunc(std::string_view name, FuncAST func) {
+	m_funcs.emplace(name, std::move(func));
+}
+
+FuncAST* RedyModule::GetFunc(std::string_view name) {
+	auto func = m_funcs.find(name);
+	if (func == m_funcs.end()) {
+		return nullptr;
+	}
+	return &func->second;
+}

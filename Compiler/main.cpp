@@ -18,11 +18,11 @@ void InitModule() {
 }
 
 void InitDefaultTypes(RedyModule& module) {
-	auto f64Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "f64", std::vector<FuncAST> {});
+	auto f64Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "f64", std::unordered_map<std::string_view, FuncAST> {});
 	f64Decl->LLVMType = Type::getDoubleTy(*TheContext);
-	auto boolDecl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "bool", std::vector<FuncAST> {});
+	auto boolDecl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "bool", std::unordered_map<std::string_view, FuncAST> {});
 	boolDecl->LLVMType = Type::getInt1Ty(*TheContext);
-	auto i32Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "i32", std::vector<FuncAST> {});
+	auto i32Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "i32", std::unordered_map<std::string_view, FuncAST> {});
 	i32Decl->LLVMType = Type::getInt32Ty(*TheContext);
 
 
@@ -63,7 +63,7 @@ void main() {
 			pub struct i32 {}
 		)");*/
 
-		auto&& module = std::move(parser.Parse(R"(
+		RedyModule module(parser.Parse(R"(
 			pub struct TestStruct {
 				i32 Test;
 

@@ -145,6 +145,7 @@
     <ClCompile Include="RedyParser.cpp" />
     <ClCompile Include="RedyLexer.cpp" />
     <ClCompile Include="Register.cpp" />
+    <ClCompile Include="TypeDeclAST.cpp" />
     <ClCompile Include="TypeCheck.cpp" />
     <ClCompile Include="UnknownType.cpp" />
     <ClCompile Include="VariableAST.cpp" />

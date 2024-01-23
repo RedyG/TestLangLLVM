@@ -5,6 +5,9 @@
 using namespace llvm;
 
 void StructAST::GenLLVMType(LLVMContext& context, RedyModule& module) {
+	if (Fields.size() == 0)
+		return;
+
 	std::vector<Type*> types;
 	for (auto& field : Fields) {
 		types.push_back(module.GetType(field.Variable.Type, context)->LLVMType);

@@ -70,9 +70,12 @@ void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
 
 
 void FuncAST::CodeGen(CodeGenCtx ctx) {
-	CurrentFunc = ctx.Mod.getFunction(Proto.Name);
+	auto func = ctx.RedyMod.GetType(TypeAST("TestStruct"), ctx.GetLLVMCtx())->GetMethod(Proto.Name);
+	CurrentFunc = func.
 	if (!CurrentFunc)
 		throw std::exception("Function not found");
+
+	for (auto param : CurrentFunc.)
 
 	if (std::holds_alternative<ExprPtr>(Body)) {
 		if (Value* RetVal = std::get<ExprPtr>(Body)->CodeGen(ctx)) {
@@ -95,13 +98,13 @@ void FuncAST::CodeGen(CodeGenCtx ctx) {
 }
 
 void StructAST::CodeGen(CodeGenCtx ctx) {
-	for (auto& method : Methods) {
-		method.CodeGen(ctx);
+	for (auto& methodEntry : Methods) {
+		methodEntry.second.CodeGen(ctx);
 	}
 }
 
 void RedyModule::CodeGen(CodeGenCtx ctx) {
-	for (auto& entry : TypeDecls) {
+	for (auto& entry : m_typeDecls) {
 		// temporary fix
 		if (auto structAST = dynamic_cast<StructAST*>(entry.second.get())) {
 			structAST->CodeGen(ctx);

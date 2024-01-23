@@ -4,7 +4,7 @@
 
 class RedyParser {
 public:
-	RedyModule&& Parse(std::string_view input);
+	RedyModule Parse(std::string_view input);
 
 	RedyParser() : m_lexer(CreateRedyLexer("")) {}
 private:
@@ -22,7 +22,7 @@ private:
 	TypeAST ParseTypeUnwrap();
 	VisibilityAST ParseVisibility();
 	std::vector<VariableDeclStatement> ParseParams();
-	void ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST>& funcs, std::vector<ProtoAST>& protos);
+	void ParseMembers(std::vector<FieldAST>& fields, std::unordered_map<std::string_view, FuncAST>& funcs, std::vector<ProtoAST>& protos);
 	std::unique_ptr<StructAST> ParseStruct();
 
 	RedyLexer m_lexer;

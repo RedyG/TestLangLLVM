@@ -15,7 +15,7 @@ VariableDeclStatement* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
 		auto symbol = symbols[i];
 		if (symbol->Variable.Name == name) {
-			return symbol;
+			return symbol; std::move(2);
 		}
 	}
 
@@ -65,9 +65,12 @@ TypeDeclAST* VariableExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& co
 }
 
 TypeDeclAST* CallExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
+	auto func = module.GetType(TypeAST("TestStruct"), context)->GetMethod(dynamic_cast<VariableExpr*>(Callee.get())->Name);
 	for (auto& param : Params) {
+		param->TypeCheck(module, context);
+		// todo
 	}
-	return nullptr;
+	return module.GetType(func->Proto.Type, context);
 }
 
 TypeDeclAST* UnaryExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
@@ -104,9 +107,9 @@ void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 
 
 void RedyModule::TypeCheck(llvm::LLVMContext& context) {
-	for (auto& entry : TypeDecls) {
-		for (auto& method : entry.second->Methods) {
-			method.TypeCheck(*this, context);
+	for (auto& typeEntry : m_typeDecls) {
+		for (auto& methodEntry : typeEntry.second->Methods) {
+			methodEntry.second.TypeCheck(*this, context);
 		}
 	}
 }

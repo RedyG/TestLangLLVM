@@ -5,9 +5,9 @@
 using namespace llvm;
 
 void RedyModule::Register(Module& module) {
-	for (auto& entry : TypeDecls) {
-		for (auto& method : entry.second->Methods) {
-			method.Proto.Register(*this, module);
+	for (auto& typeEntry : m_typeDecls) {
+		for (auto& methodEntry : typeEntry.second->Methods) {
+			methodEntry.second.Proto.Register(*this, module);
 		}
 	}
 }

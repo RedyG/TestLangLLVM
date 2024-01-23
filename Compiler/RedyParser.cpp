@@ -244,7 +244,7 @@ std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
 	return converted;
 }
 
-void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST>& funcs, std::vector<ProtoAST>& protos) {
+void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::unordered_map<std::string_view, FuncAST>& funcs, std::vector<ProtoAST>& protos) {
 	while (true) {
 
 		if (m_lexer.ConsumeIf(TokenType::RCurly))
@@ -264,13 +264,13 @@ void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST
 					if (m_lexer.ConsumeIf(TokenType::Arrow)) {
 						auto body = ParseExpr();
 						if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-							funcs.emplace_back(std::move(proto), std::move(body));
+							funcs.emplace(name, std::move(FuncAST(std::move(proto), std::move(body))));
 						}
 					} else {
 						auto statement = ParseStatement();
 						auto block = dynamic_pointer_cast<BlockStatement, StatementAST>(std::move(statement));
 						if (block) {
-							funcs.emplace_back(std::move(proto), std::move(block));
+							funcs.emplace(name, std::move(FuncAST(std::move(proto), std::move(block))));
 						}
 					}
 				}
@@ -283,41 +283,35 @@ void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::vector<FuncAST
 
 std::vector<ProtoAST> protos;
 
-std::unique_ptr<StructAST> RedyParser::ParseStruct() {
-	auto visibility = ParseVisibility();
-	if (m_lexer.ConsumeIf(TokenType::Struct)) {
-		if (m_lexer.Current().Type == TokenType::Identifier) {
-			auto name = m_lexer.Current().Content;;
-			m_lexer.Consume();
-			if (m_lexer.ConsumeIf(TokenType::LCurly)) {
-				std::vector<FieldAST> fields;
-				std::vector<FuncAST> methods;
-				ParseMembers(fields, methods, protos);
-				if (protos.size() != 0) {
-					protos.clear();
-					throw std::exception("Struct methods should have a body.");
-				}
-				return std::make_unique<StructAST>(std::move(fields), visibility, name, std::move(methods));
-			}
-		}
-	}
-
-	throw std::exception("invalid struct definition");
-}
-
-RedyModule&& RedyParser::Parse(std::string_view input) {
+RedyModule RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
 
-	RedyModule module(std::unordered_map<TypeAST, std::unique_ptr<TypeDeclAST>> {});
+	RedyModule module;
 	
 	do {
-		auto structAST = ParseStruct();
-		auto name = structAST->Name;
-		module.AddType(name, std::move(structAST));
+		auto visibility = ParseVisibility();
+		if (m_lexer.ConsumeIf(TokenType::Struct)) {
+			if (m_lexer.Current().Type == TokenType::Identifier) {
+				auto name = m_lexer.Current().Content;;
+				m_lexer.Consume();
+				if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+					std::vector<FieldAST> fields;
+					std::unordered_map<std::string_view, FuncAST> methods;
+					ParseMembers(fields, methods, protos);
+					if (protos.size() != 0) {
+						protos.clear();
+						throw std::exception("Struct methods should have a body.");
+					}
+					module.AddType(name, std::make_unique<StructAST>(std::move(fields), visibility, name, std::move(methods)));
+				}
+			}
+		}
+
+		throw std::exception("invalid struct or function definition");
 	} while (m_lexer.Current().Type != TokenType::Invalid);
 
-	return std::move(module);
+	return module;
 }
 
 /*
