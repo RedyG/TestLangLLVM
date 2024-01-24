@@ -1,6 +1,6 @@
 #pragma once
-#include "VariableAST.h"
 #include "StatementAST.h"
+#include "SymbolAST.h"
 
 namespace llvm {
 	class AllocaInst;
@@ -8,11 +8,10 @@ namespace llvm {
 
 class VariableDeclStatement : public StatementAST {
 public:
-	VariableAST Variable;
-	llvm::AllocaInst* Alloca = nullptr;
+	SymbolAST Symbol;
 
 	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 
-	VariableDeclStatement(VariableAST variable) : Variable(std::move(variable)) {}
+	VariableDeclStatement(SymbolAST symbol) : Symbol(std::move(symbol)) {}
 };

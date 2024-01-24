@@ -154,5 +154,11 @@
     <ClInclude Include="RedyModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SymbolAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="ParamAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -7,15 +7,15 @@
 #include "TypeDeclAST.h"
 #include "UnknownType.h"
 
-std::vector<VariableDeclStatement*> symbols;
+std::vector<SymbolAST*> symbols;
 std::stack<int> symbolsCount;
 TypeDeclAST* ReturnType = UnknownType;
 
-VariableDeclStatement* FindSymbol(std::string_view name) {
+SymbolAST* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
 		auto symbol = symbols[i];
 		if (symbol->Variable.Name == name) {
-			return symbol; std::move(2);
+			return symbol;
 		}
 	}
 
@@ -65,7 +65,7 @@ TypeDeclAST* VariableExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& co
 }
 
 TypeDeclAST* CallExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	auto func = module.GetType(TypeAST("TestStruct"), context)->GetMethod(dynamic_cast<VariableExpr*>(Callee.get())->Name);
+	auto func = module.GetFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
 	for (auto& param : Params) {
 		param->TypeCheck(module, context);
 		// todo
@@ -84,8 +84,8 @@ TypeDeclAST* UnaryExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& conte
 void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 	ReturnType = module.GetType(Proto.Type, context);
 
-	for (auto& symbol : Proto.Params) {
-		symbols.push_back(&symbol);
+	for (auto& param : Proto.Params) {
+		symbols.push_back(&param.Symbol);
 	}
 
 	if (std::holds_alternative<ExprPtr>(Body)) {
@@ -112,10 +112,14 @@ void RedyModule::TypeCheck(llvm::LLVMContext& context) {
 			methodEntry.second.TypeCheck(*this, context);
 		}
 	}
+
+	for (auto& funcEntry : m_funcs) {
+		funcEntry.second.TypeCheck(*this, context);
+	}
 }
 
 void VariableDeclStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
-	symbols.push_back(this);
+	symbols.push_back(&Symbol);
 	symbolsCount.top()++;
 }
 

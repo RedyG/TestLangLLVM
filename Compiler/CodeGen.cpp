@@ -3,8 +3,6 @@
 #include <fstream>
 using namespace llvm;
 
-Function* CurrentFunc;
-
 Value* IntExpr::CodeGen(CodeGenCtx ctx) {
 	return ConstantInt::get(IntegerType::getInt32Ty(ctx.GetLLVMCtx()), Value, true);
 }
@@ -34,12 +32,12 @@ Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
-	Function* func = ctx.Mod.getFunction(dynamic_cast<VariableExpr&>(*Callee).Name);
+	auto func = ctx.RedyMod.GetFunc(dynamic_cast<VariableExpr&>(*Callee).Name);
 	std::vector<Value*> params;
 	for (auto& param : Params) {
 		params.push_back(param->CodeGen(ctx));
 	}
-	return ctx.Builder.CreateCall(func, params, "calltmp");
+	return ctx.Builder.CreateCall(func->LLVMFunc, params, "calltmp");
 }
 
 Value* UnaryExpr::CodeGen(CodeGenCtx ctx) {
@@ -51,7 +49,7 @@ void ReturnStatement::CodeGenStatement(CodeGenCtx ctx) {
 }
 
 void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
-	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", CurrentFunc);
+	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", ctx.Func);
 	ctx.Builder.SetInsertPoint(basicBlock);
 
 	for (auto& statement : Statements) {
@@ -59,42 +57,58 @@ void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
 	}
 }
 
-void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
-	Alloca = ctx.Builder.CreateAlloca(ctx.RedyMod.GetType(Variable.Type, ctx.GetLLVMCtx())->LLVMType);
-	if (Variable.DefaultValue) {
-		auto value = Variable.DefaultValue->CodeGen(ctx);
-		ctx.Builder.CreateStore(value, Alloca);
+void BlockStatement::CodeGenWithParams(CodeGenCtx ctx, std::vector<ParamAST>& params) {
+	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", ctx.Func);
+	ctx.Builder.SetInsertPoint(basicBlock);
+
+	for (auto& param : params) {
+		param.CodeGen(ctx);
+	}
+
+	for (auto& statement : Statements) {
+		statement->CodeGenStatement(ctx);
 	}
 }
 
+void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
+	Symbol.Alloca = ctx.Builder.CreateAlloca(ctx.RedyMod.GetType(Symbol.Variable.Type, ctx.GetLLVMCtx())->LLVMType);
+	if (Symbol.Variable.DefaultValue) {
+		auto value = Symbol.Variable.DefaultValue->CodeGen(ctx);
+		ctx.Builder.CreateStore(value, Symbol.Alloca);
+	}
+}
 
+void ParamAST::CodeGen(CodeGenCtx ctx) {
+	Symbol.Alloca = ctx.Builder.CreateAlloca(LLVMArg->getType());
+	ctx.Builder.CreateStore(LLVMArg, Symbol.Alloca);
+}
 
 void FuncAST::CodeGen(CodeGenCtx ctx) {
-	auto func = ctx.RedyMod.GetType(TypeAST("TestStruct"), ctx.GetLLVMCtx())->GetMethod(Proto.Name);
-	CurrentFunc = func.
-	if (!CurrentFunc)
+	ctx.Func = LLVMFunc;
+	if (!ctx.Func)
 		throw std::exception("Function not found");
 
-	for (auto param : CurrentFunc.)
-
 	if (std::holds_alternative<ExprPtr>(Body)) {
+		BasicBlock* BB = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", ctx.Func);
+		ctx.Builder.SetInsertPoint(BB);
+
+		for (auto& param : Proto.Params) {
+			param.CodeGen(ctx);
+		}
+
 		if (Value* RetVal = std::get<ExprPtr>(Body)->CodeGen(ctx)) {
-
-			BasicBlock* BB = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", CurrentFunc);
-			ctx.Builder.SetInsertPoint(BB);
-
 			ctx.Builder.CreateRet(RetVal);
 		}
 		else {
-			CurrentFunc->eraseFromParent();
+			ctx.Func->eraseFromParent();
 			throw std::exception("Invalid codegen");
 		}
 	}
 	else {
-		std::get<std::unique_ptr<BlockStatement>>(Body)->CodeGenStatement(ctx);
+		std::get<std::unique_ptr<BlockStatement>>(Body)->CodeGenWithParams(ctx, Proto.Params);
 	}
 
-	verifyFunction(*CurrentFunc);
+	verifyFunction(*ctx.Func);
 }
 
 void StructAST::CodeGen(CodeGenCtx ctx) {
@@ -109,5 +123,9 @@ void RedyModule::CodeGen(CodeGenCtx ctx) {
 		if (auto structAST = dynamic_cast<StructAST*>(entry.second.get())) {
 			structAST->CodeGen(ctx);
 		}
+	}
+
+	for (auto& funcEntry : m_funcs) {
+		funcEntry.second.CodeGen(ctx);
 	}
 }

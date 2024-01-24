@@ -71,8 +71,9 @@ void main() {
 					f64 a = 2.0;
 					return 1.0 + a + other(a);
 				}
-				f64 other(f64 a) => a + 2.0;
 			} 
+
+			f64 other(f64 a) => a + 2.0;
 		)"));
 
 		//AddModule("Main", std::move(module));

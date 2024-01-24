@@ -21,8 +21,8 @@ private:
 	std::optional<TypeAST> ParseType();
 	TypeAST ParseTypeUnwrap();
 	VisibilityAST ParseVisibility();
-	std::vector<VariableDeclStatement> ParseParams();
-	void ParseMembers(std::vector<FieldAST>& fields, std::unordered_map<std::string_view, FuncAST>& funcs, std::vector<ProtoAST>& protos);
+	std::vector<ParamAST> ParseParams();
+	std::variant<FuncAST, FieldAST, ProtoAST> ParseMember();
 	std::unique_ptr<StructAST> ParseStruct();
 
 	RedyLexer m_lexer;

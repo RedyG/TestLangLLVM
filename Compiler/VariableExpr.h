@@ -8,7 +8,7 @@ namespace llvm {
 
 class VariableExpr : public ExprAST {
 public:
-	VariableDeclStatement* Symbol;
+	SymbolAST* Symbol;
 	std::string_view Name;
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 

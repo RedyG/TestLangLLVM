@@ -4,8 +4,7 @@
 #include "ExprPtr.h"
 #include "ExprAST.h"
 
-class VariableAST {
-public:
+struct VariableAST {
 	TypeAST Type;
 	std::string_view Name;
 	ExprPtr DefaultValue;

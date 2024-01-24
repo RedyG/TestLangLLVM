@@ -2,6 +2,7 @@
 #include "VisibilityAST.h"
 #include "TypeAST.h"
 #include "VariableDeclStatement.h"
+#include "ParamAST.h"
 namespace llvm {
 	class Module;
 }
@@ -11,10 +12,8 @@ public:
 	VisibilityAST Visibility;
 	TypeAST Type;
 	std::string_view Name;
-	std::vector<VariableDeclStatement> Params;
+	std::vector<ParamAST> Params;
 
-	ProtoAST(VisibilityAST visibility, TypeAST type, std::string_view name, std::vector<VariableDeclStatement> params)
+	ProtoAST(VisibilityAST visibility, TypeAST type, std::string_view name, std::vector<ParamAST> params)
 		: Visibility(visibility), Type(type), Name(name), Params(std::move(params)) {}
-
-	void Register(RedyModule& redyModule, llvm::Module& module);
 };

@@ -7,32 +7,39 @@ using namespace llvm;
 void RedyModule::Register(Module& module) {
 	for (auto& typeEntry : m_typeDecls) {
 		for (auto& methodEntry : typeEntry.second->Methods) {
-			methodEntry.second.Proto.Register(*this, module);
+			methodEntry.second.Register(*this, module);
 		}
+	}
+	for (auto& funcEntry : m_funcs) {
+		funcEntry.second.Register(*this, module);
 	}
 }
 
 
 
-void ProtoAST::Register(RedyModule& redyModule, Module& module) {
-	if (module.getFunction(Name)) {
-		Logger::Error(std::format("Function with name \"{0}\" already exists", Name));
+void FuncAST::Register(RedyModule& redyModule, Module& module) {
+	if (module.getFunction(Proto.Name)) {
+		Logger::Error(std::format("Function with name \"{0}\" already exists", Proto.Name));
 		return;
 	}
 
 	std::vector<llvm::Type*> types;
-	types.reserve(Params.size());
-	for (auto& param : Params) {
-		types.push_back(redyModule.GetType(param.Variable.Type, module.getContext())->LLVMType);
+	types.reserve(Proto.Params.size());
+	for (auto& param : Proto.Params) {
+		types.push_back(redyModule.GetType(param.Symbol.Variable.Type, module.getContext())->LLVMType);
 	}
 	FunctionType* functionType =
-		FunctionType::get(redyModule.GetType(Type, module.getContext())->LLVMType, types, false);
-	Function* function =
-		Function::Create(functionType, Function::ExternalLinkage, Name, module);
+		FunctionType::get(redyModule.GetType(Proto.Type, module.getContext())->LLVMType, types, false);
+	LLVMFunc =
+		Function::Create(functionType, Function::ExternalLinkage, Proto.Name, module);
 	// Set names for all arguments.
 	unsigned i = 0;
-	for (auto& Arg : function->args())
-		Arg.setName(Params[i++].Variable.Name);
+	for (auto& Arg : LLVMFunc->args()) {
+		auto& param = Proto.Params[i++];
+		Arg.setName(param.Symbol.Variable.Name);
+		param.LLVMArg = &Arg;
+
+	}
 }
 
 /*pub trait Iterator<T>

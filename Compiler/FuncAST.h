@@ -8,7 +8,7 @@ using BlockOrExpr = std::variant<ExprPtr, std::unique_ptr<BlockStatement>>;
 
 class FuncAST {
 public:
-	Function* LLVMFunc = nullptr;
+	llvm::Function* LLVMFunc = nullptr;
 	ProtoAST Proto;
 	BlockOrExpr Body;
 
@@ -16,4 +16,5 @@ public:
 
 	void TypeCheck(RedyModule& module,llvm::LLVMContext& context);
 	void CodeGen(CodeGenCtx ctx);
+	void Register(RedyModule& redyModule, llvm::Module& module);
 };

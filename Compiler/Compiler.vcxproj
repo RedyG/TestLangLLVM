@@ -162,12 +162,14 @@
     <ClInclude Include="FloatExpr.h" />
     <ClInclude Include="FuncAST.h" />
     <ClInclude Include="IntExpr.h" />
+    <ClInclude Include="ParamAST.h" />
     <ClInclude Include="RedyModule.h" />
     <ClInclude Include="Modules.h" />
     <ClInclude Include="ProtoAST.h" />
     <ClInclude Include="ReturnStatement.h" />
     <ClInclude Include="StatementAST.h" />
     <ClInclude Include="StructAST.h" />
+    <ClInclude Include="SymbolAST.h" />
     <ClInclude Include="TypeAST.h" />
     <ClInclude Include="UnaryExpr.h" />
     <ClInclude Include="UnknownType.h" />

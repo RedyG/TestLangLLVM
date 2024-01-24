@@ -211,8 +211,8 @@ VisibilityAST RedyParser::ParseVisibility() {
 	return VisibilityAST::Private;
 }
 
-std::vector<VariableDeclStatement> RedyParser::ParseParams() {
-	std::vector<VariableDeclStatement> params {};
+std::vector<ParamAST> RedyParser::ParseParams() {
+	std::vector<ParamAST> params {};
 
 	if (m_lexer.ConsumeIf(TokenType::RParen)) {
 		return params;
@@ -223,7 +223,7 @@ std::vector<VariableDeclStatement> RedyParser::ParseParams() {
 		if (m_lexer.Current().Type == TokenType::Identifier) {
 			auto name = m_lexer.Current().Content;
 			m_lexer.Consume();
-			params.emplace_back(VariableAST(type, name));
+			params.emplace_back(std::move(SymbolAST(VariableAST(type, name))));
 		}
 		
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
@@ -244,44 +244,39 @@ std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
 	return converted;
 }
 
-void RedyParser::ParseMembers(std::vector<FieldAST>& fields, std::unordered_map<std::string_view, FuncAST>& funcs, std::vector<ProtoAST>& protos) {
-	while (true) {
-
-		if (m_lexer.ConsumeIf(TokenType::RCurly))
-			return;
-
-		auto visibility = ParseVisibility();
-		auto type = ParseTypeUnwrap();
-		if (m_lexer.Current().Type == TokenType::Identifier) {
-			auto name = m_lexer.Current().Content;
-			m_lexer.Consume();
-			if (m_lexer.ConsumeIf(TokenType::LParen)) {
-				auto params = ParseParams();
-				auto proto = ProtoAST(visibility, type, name, std::move(params));
-				if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-					protos.push_back(std::move(proto));
-				} else {
-					if (m_lexer.ConsumeIf(TokenType::Arrow)) {
-						auto body = ParseExpr();
-						if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-							funcs.emplace(name, std::move(FuncAST(std::move(proto), std::move(body))));
-						}
-					} else {
-						auto statement = ParseStatement();
-						auto block = dynamic_pointer_cast<BlockStatement, StatementAST>(std::move(statement));
-						if (block) {
-							funcs.emplace(name, std::move(FuncAST(std::move(proto), std::move(block))));
-						}
+std::variant<FuncAST, FieldAST, ProtoAST> RedyParser::ParseMember() {
+	auto visibility = ParseVisibility();
+	auto type = ParseTypeUnwrap();
+	if (m_lexer.Current().Type == TokenType::Identifier) {
+		auto name = m_lexer.Current().Content;
+		m_lexer.Consume();
+		if (m_lexer.ConsumeIf(TokenType::LParen)) {
+			auto params = ParseParams();
+			auto proto = ProtoAST(visibility, type, name, std::move(params));
+			if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+				return proto;
+			}
+			else {
+				if (m_lexer.ConsumeIf(TokenType::Arrow)) {
+					auto body = ParseExpr();
+					if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+						return std::move(FuncAST(std::move(proto), std::move(body)));
 					}
 				}
-			} else if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-				fields.emplace_back(visibility, VariableAST(type, name));
+				else {
+					auto statement = ParseStatement();
+					auto block = dynamic_pointer_cast<BlockStatement, StatementAST>(std::move(statement));
+					if (block) {
+						return std::move(FuncAST(std::move(proto), std::move(block)));
+					}
+				}
 			}
+		}
+		else if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+			return std::move(FieldAST(visibility, VariableAST(type, name)));
 		}
 	}
 }
-
-std::vector<ProtoAST> protos;
 
 RedyModule RedyParser::Parse(std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
@@ -298,17 +293,36 @@ RedyModule RedyParser::Parse(std::string_view input) {
 				if (m_lexer.ConsumeIf(TokenType::LCurly)) {
 					std::vector<FieldAST> fields;
 					std::unordered_map<std::string_view, FuncAST> methods;
-					ParseMembers(fields, methods, protos);
-					if (protos.size() != 0) {
-						protos.clear();
-						throw std::exception("Struct methods should have a body.");
+					while (m_lexer.Current().Type != TokenType::RCurly) {
+						auto member = ParseMember();
+						if (std::holds_alternative<FieldAST>(member)) {
+							fields.emplace_back(std::get<FieldAST>(std::move(member)));
+						}
+						else if (std::holds_alternative<FuncAST>(member)) {
+							auto method = std::move(std::get<FuncAST>(std::move(member)));
+							methods.emplace(method.Proto.Name, std::move(method));
+						}
+						else {
+							throw std::exception("Methods in structs must contain bodies");
+						}
 					}
+					m_lexer.Consume();
 					module.AddType(name, std::make_unique<StructAST>(std::move(fields), visibility, name, std::move(methods)));
 				}
 			}
+			else {
+				throw std::exception("invalid type definition");
+			}
 		}
-
-		throw std::exception("invalid struct or function definition");
+		else {
+			auto member = ParseMember();
+			if (!std::holds_alternative<FuncAST>(member)) {
+				throw std::exception("we only support static methods for now bro");
+			}
+			auto func = std::move(std::get<FuncAST>(std::move(member)));
+			func.Proto.Visibility = visibility; // important
+			module.AddFunc(func.Proto.Name, std::move(func));
+		}
 	} while (m_lexer.Current().Type != TokenType::Invalid);
 
 	return module;

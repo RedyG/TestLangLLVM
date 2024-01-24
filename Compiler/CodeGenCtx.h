@@ -5,6 +5,7 @@ class RedyModule;
 
 struct CodeGenCtx {
 public:
+	llvm::Function* Func = nullptr;
 	RedyModule& RedyMod;
 	llvm::Module& Mod;
 	llvm::IRBuilder<>& Builder;
