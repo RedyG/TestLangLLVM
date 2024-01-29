@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BuiltInTypes.cpp" />
     <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="ExprAST.cpp" />
     <ClCompile Include="GenLLVMType.cpp" />
@@ -145,6 +146,8 @@
     <ClCompile Include="RedyParser.cpp" />
     <ClCompile Include="RedyLexer.cpp" />
     <ClCompile Include="Register.cpp" />
+    <ClCompile Include="ReturnStatement.cpp" />
+    <ClCompile Include="StatementAST.cpp" />
     <ClCompile Include="TypeDeclAST.cpp" />
     <ClCompile Include="TypeCheck.cpp" />
     <ClCompile Include="UnknownType.cpp" />
@@ -154,6 +157,8 @@
     <ClInclude Include="AST.h" />
     <ClInclude Include="BinOpExpr.h" />
     <ClInclude Include="BlockStatement.h" />
+    <ClInclude Include="BoolExpr.h" />
+    <ClInclude Include="BuiltInTypes.h" />
     <ClInclude Include="CallExpr.h" />
     <ClInclude Include="ExprAST.h" />
     <ClInclude Include="ExprPtr.h" />
@@ -161,6 +166,7 @@
     <ClInclude Include="FieldAST.h" />
     <ClInclude Include="FloatExpr.h" />
     <ClInclude Include="FuncAST.h" />
+    <ClInclude Include="IfStatement.h" />
     <ClInclude Include="IntExpr.h" />
     <ClInclude Include="ParamAST.h" />
     <ClInclude Include="RedyModule.h" />

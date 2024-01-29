@@ -9,6 +9,7 @@ public:
 
 	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
+	bool IsBranch() override;
 
-	ReturnStatement(ExprPtr expr) : Expr(std::move(expr)) {}
+	ReturnStatement(ExprPtr expr);
 };

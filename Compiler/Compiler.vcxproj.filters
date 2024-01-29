@@ -59,6 +59,15 @@
     <ClCompile Include="TypeDeclAST.cpp">
       <Filter>AST</Filter>
     </ClCompile>
+    <ClCompile Include="StatementAST.cpp">
+      <Filter>AST</Filter>
+    </ClCompile>
+    <ClCompile Include="ReturnStatement.cpp">
+      <Filter>AST</Filter>
+    </ClCompile>
+    <ClCompile Include="BuiltInTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lexer.h">
@@ -159,6 +168,15 @@
     </ClInclude>
     <ClInclude Include="ParamAST.h">
       <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="IfStatement.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="BoolExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="BuiltInTypes.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

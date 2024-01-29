@@ -6,6 +6,7 @@
 #include <stack>
 #include "TypeDeclAST.h"
 #include "UnknownType.h"
+#include "BuiltInTypes.h"
 
 std::vector<SymbolAST*> symbols;
 std::stack<int> symbolsCount;
@@ -22,12 +23,17 @@ SymbolAST* FindSymbol(std::string_view name) {
 	return nullptr;
 }
 
+TypeDeclAST* BoolExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
+	return BuiltInTypes::BoolDecl;
+}
+
+
 TypeDeclAST* IntExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	return module.GetType(TypeAST("i32"), context);
+	return BuiltInTypes::I32Decl;
 }
 
 TypeDeclAST* FloatExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	return module.GetType(TypeAST("f64"), context);
+	return BuiltInTypes::F64Decl;
 }
 
 std::string_view GetOpName(TokenType op) {
@@ -65,7 +71,7 @@ TypeDeclAST* VariableExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& co
 }
 
 TypeDeclAST* CallExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	auto func = module.GetFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
+	auto func = module.GetPubFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
 	for (auto& param : Params) {
 		param->TypeCheck(module, context);
 		// todo
@@ -75,7 +81,7 @@ TypeDeclAST* CallExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& contex
 
 TypeDeclAST* UnaryExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 	auto type = Expr->TypeCheck(module, context);
-	if (type != module.GetType(TypeAST("bool"), context)) {
+	if (type != BuiltInTypes::BoolDecl) {
 		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type->Name));
 	}
 	return type;
@@ -121,6 +127,18 @@ void RedyModule::TypeCheck(llvm::LLVMContext& context) {
 void VariableDeclStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
 	symbols.push_back(&Symbol);
 	symbolsCount.top()++;
+}
+
+void IfStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
+	auto condType = Condition->TypeCheck(module, context);
+	if (condType != BuiltInTypes::BoolDecl) {
+		Logger::Error("The condition of an if statement must be of type bool");
+		return;
+	}
+	ThenBlock.TypeCheckStatement(module, context);
+	if (ElseBlock) {
+		ElseBlock->TypeCheckStatement(module, context);
+	}
 }
 
 void BlockStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {

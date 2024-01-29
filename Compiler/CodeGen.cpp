@@ -1,14 +1,15 @@
 #include "AST.h"
+#include "BuiltInTypes.h"
 #include <llvm/IR/Verifier.h>
 #include <fstream>
 using namespace llvm;
 
 Value* IntExpr::CodeGen(CodeGenCtx ctx) {
-	return ConstantInt::get(IntegerType::getInt32Ty(ctx.GetLLVMCtx()), Value, true);
+	return ConstantInt::get(BuiltInTypes::I32Decl->LLVMType, Value, true);
 }
 
 Value* FloatExpr::CodeGen(CodeGenCtx ctx) {
-	return ConstantFP::get(ctx.RedyMod.GetType(TypeAST("f64"), ctx.GetLLVMCtx())->LLVMType, APFloat(Value));
+	return ConstantFP::get(BuiltInTypes::F64Decl->LLVMType, APFloat(Value));
 }
 
 Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
@@ -17,7 +18,8 @@ Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 	std::cout << lhs->getType() << "\n";
 	std::cout << rhs->getType() << "\n";
 	switch (Op) {
-	case TokenType::Add: return ctx.Builder.CreateFAdd(lhs, rhs, "addtmp");;
+	case TokenType::Eq: return ctx.Builder.CreateFCmpOEQ(lhs, rhs, "cmptmp");
+	case TokenType::Add: return ctx.Builder.CreateFAdd(lhs, rhs, "addtmp");
 	case TokenType::Sub: return nullptr;
 	case TokenType::Mul: return nullptr;
 	case TokenType::Div: return nullptr;
@@ -32,12 +34,16 @@ Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
-	auto func = ctx.RedyMod.GetFunc(dynamic_cast<VariableExpr&>(*Callee).Name);
+	auto func = ctx.RedyMod.GetPubFunc(dynamic_cast<VariableExpr&>(*Callee).Name);
 	std::vector<Value*> params;
 	for (auto& param : Params) {
 		params.push_back(param->CodeGen(ctx));
 	}
 	return ctx.Builder.CreateCall(func->LLVMFunc, params, "calltmp");
+}
+
+Value* BoolExpr::CodeGen(CodeGenCtx ctx) {
+	return ConstantInt::get(BuiltInTypes::BoolDecl->LLVMType, (int)Value);
 }
 
 Value* UnaryExpr::CodeGen(CodeGenCtx ctx) {
@@ -48,13 +54,18 @@ void ReturnStatement::CodeGenStatement(CodeGenCtx ctx) {
 	ctx.Builder.CreateRet(Expr->CodeGen(ctx));
 }
 
-void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
-	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetLLVMCtx(), "entry", ctx.Func);
+BasicBlock* BlockStatement::CodeGen(CodeGenCtx ctx, std::string_view name) {
+	BasicBlock* basicBlock = BasicBlock::Create(ctx.GetLLVMCtx(), name, ctx.Func);
 	ctx.Builder.SetInsertPoint(basicBlock);
 
 	for (auto& statement : Statements) {
 		statement->CodeGenStatement(ctx);
 	}
+	return basicBlock;
+}
+
+void BlockStatement::CodeGenStatement(CodeGenCtx ctx) {
+	CodeGen(ctx, "");
 }
 
 void BlockStatement::CodeGenWithParams(CodeGenCtx ctx, std::vector<ParamAST>& params) {
@@ -76,6 +87,21 @@ void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
 		auto value = Symbol.Variable.DefaultValue->CodeGen(ctx);
 		ctx.Builder.CreateStore(value, Symbol.Alloca);
 	}
+}
+
+void IfStatement::CodeGenStatement(CodeGenCtx ctx) {
+	auto cond = Condition->CodeGen(ctx);
+	auto parentBlock = ctx.Builder.GetInsertBlock();
+
+	auto thenblock = ThenBlock.CodeGen(ctx, "if");
+	auto contBlock = BasicBlock::Create(ctx.GetLLVMCtx(), "ifcont", ctx.Func);
+	if (ThenBlock.Statements.empty() || !ThenBlock.Statements.back()->IsBranch()) {
+		ctx.Builder.CreateBr(contBlock);
+	}
+
+	ctx.Builder.SetInsertPoint(parentBlock);
+	ctx.Builder.CreateCondBr(cond, thenblock, contBlock);
+	ctx.Builder.SetInsertPoint(contBlock);
 }
 
 void ParamAST::CodeGen(CodeGenCtx ctx) {
@@ -110,6 +136,7 @@ void FuncAST::CodeGen(CodeGenCtx ctx) {
 
 	verifyFunction(*ctx.Func);
 }
+
 
 void StructAST::CodeGen(CodeGenCtx ctx) {
 	for (auto& methodEntry : Methods) {

@@ -7,6 +7,7 @@
 #include "FloatExpr.h"
 #include "FuncAST.h"
 #include "IntExpr.h"
+#include "IfStatement.h"
 #include "RedyModule.h"
 #include "ProtoAST.h"
 #include "ReturnStatement.h"
@@ -18,3 +19,4 @@
 #include "VariableDeclStatement.h"
 #include "VariableExpr.h"
 #include "VisibilityAST.h"
+#include "BoolExpr.h"

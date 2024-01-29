@@ -4,6 +4,16 @@
 #include <string>
 #include "TypeDeclAST.h"
 
+template<typename T, typename S>
+std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
+{
+	auto converted = std::unique_ptr<T>{ dynamic_cast<T*>(p.get()) };
+	if (converted) {
+		p.release();            // no longer owns the pointer
+	}
+	return converted;
+}
+
 std::string EraseChar(std::string_view str, char c) {
 	std::string result;
 	for (size_t i = 0; i < str.size(); i++)
@@ -14,28 +24,28 @@ std::string EraseChar(std::string_view str, char c) {
 	}
 	return std::move(result);
 }
-namespace Compiler {
-	struct Operator {
-		int Precedence;
-		bool LeftAssociative;
 
-		Operator(int precedence, bool leftAssociative)
-			: Precedence(precedence), LeftAssociative(leftAssociative) {}
-	};
-}
+struct RedyOperator {
+	int Precedence;
+	bool LeftAssociative;
 
-std::map<TokenType, Compiler::Operator> operators = {
-	{ TokenType::Add, Compiler::Operator(1, true)},
-	{ TokenType::Sub, Compiler::Operator(1, true)},
-	{ TokenType::Mul, Compiler::Operator(2, true)},
-	{ TokenType::Div, Compiler::Operator(2, true)},
+	RedyOperator(int precedence, bool leftAssociative)
+		: Precedence(precedence), LeftAssociative(leftAssociative) {}
+};
+
+std::map<TokenType, RedyOperator> operators = {
+	{ TokenType::Add, RedyOperator(1, true) },
+	{ TokenType::Sub, RedyOperator(1, true) },
+	{ TokenType::Mul, RedyOperator(2, true) },
+	{ TokenType::Div, RedyOperator(2, true) },
+	{ TokenType::Eq , RedyOperator(3, true) },
 };
 
 bool IsUnary(TokenType type) {
 	return type == TokenType::Sub;
 }
 
-std::optional<Compiler::Operator> GetOperator(TokenType type) {
+std::optional<RedyOperator> GetOperator(TokenType type) {
 	auto it = operators.find(type);
 	return it == operators.end() ? std::nullopt : std::make_optional(it->second);
 }	
@@ -79,6 +89,12 @@ ExprPtr RedyParser::ParsePrimary() {
 	}
 	else if (m_lexer.Current().Type == TokenType::Int) {
 		return std::move(ParseInt());
+	}
+	else if (m_lexer.ConsumeIf(TokenType::True)) {
+		return std::make_unique<BoolExpr>(true);
+	}
+	else if (m_lexer.ConsumeIf(TokenType::False)) {
+		return std::make_unique<BoolExpr>(false);
 	}
 	
 	return nullptr;
@@ -146,6 +162,17 @@ std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precede
 			if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
 				return std::make_unique<ReturnStatement>(std::move(expr));
 			}
+		}
+
+		if (m_lexer.ConsumeIf(TokenType::If)) {
+			auto cond = ParseExpr();
+			auto thenStatement = std::move(ParseStatement());
+			auto thenBlock = std::move(*dynamic_cast<BlockStatement*>(thenStatement.get()));
+			if (m_lexer.ConsumeIf(TokenType::Else)) {
+				auto elseBlock = std::move(ParseStatement());
+				return std::make_unique<IfStatement>(std::move(cond), std::move(thenBlock), std::move(elseBlock));
+			}
+			return std::make_unique<IfStatement>(std::move(cond), std::move(thenBlock));
 		}
 
 		if (auto type = ParseType()) {
@@ -234,16 +261,6 @@ std::vector<ParamAST> RedyParser::ParseParams() {
 	throw std::exception("couldn't parse params");
 }
 
-template<typename T, typename S>
-std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
-{
-	auto converted = std::unique_ptr<T>{ dynamic_cast<T*>(p.get()) };
-	if (converted) {
-		p.release();            // no longer owns the pointer
-	}
-	return converted;
-}
-
 std::variant<FuncAST, FieldAST, ProtoAST> RedyParser::ParseMember() {
 	auto visibility = ParseVisibility();
 	auto type = ParseTypeUnwrap();
@@ -321,7 +338,8 @@ RedyModule RedyParser::Parse(std::string_view input) {
 			}
 			auto func = std::move(std::get<FuncAST>(std::move(member)));
 			func.Proto.Visibility = visibility; // important
-			module.AddFunc(func.Proto.Name, std::move(func));
+			auto name = func.Proto.Name;
+			module.AddFunc(name, std::move(func));
 		}
 	} while (m_lexer.Current().Type != TokenType::Invalid);
 

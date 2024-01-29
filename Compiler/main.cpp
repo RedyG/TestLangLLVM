@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Modules.h"
+#include "BuiltInTypes.h"
 #include "RedyParser.h"
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
@@ -15,20 +16,6 @@ void InitModule() {
 	llvm::InitializeNativeTargetAsmPrinter();
 	llvm::InitializeNativeTargetAsmParser();
 	TheModule = std::make_unique<Module>("Test", *TheContext);
-}
-
-void InitDefaultTypes(RedyModule& module) {
-	auto f64Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "f64", std::unordered_map<std::string_view, FuncAST> {});
-	f64Decl->LLVMType = Type::getDoubleTy(*TheContext);
-	auto boolDecl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "bool", std::unordered_map<std::string_view, FuncAST> {});
-	boolDecl->LLVMType = Type::getInt1Ty(*TheContext);
-	auto i32Decl = std::make_unique<StructAST>(std::vector<FieldAST> {}, VisibilityAST::Public, "i32", std::unordered_map<std::string_view, FuncAST> {});
-	i32Decl->LLVMType = Type::getInt32Ty(*TheContext);
-
-
-	module.AddType(TypeAST("f64"), std::move(f64Decl));
-	module.AddType(TypeAST("bool"), std::move(boolDecl));
-	module.AddType(TypeAST("i32"), std::move(i32Decl));
 }
 
 void RunCode(std::unique_ptr<Module> module, std::unique_ptr<LLVMContext> context) {
@@ -69,7 +56,10 @@ void main() {
 
 				f64 main() {
 					f64 a = 2.0;
-					return 1.0 + a + other(a);
+					if a == 2.0 {
+						return 0.0;
+					}
+					return 3.0;
 				}
 			} 
 
@@ -78,7 +68,7 @@ void main() {
 
 		//AddModule("Main", std::move(module));
 
-		InitDefaultTypes(module);
+		BuiltInTypes::Init(*TheContext);
 
 		//defaultTypes.Register(*TheModule);
 		module.Register(*TheModule);
@@ -91,17 +81,3 @@ void main() {
 		throw;
 	}
 }
-
-
-
-/*
-
-void other(Vec<int> a) {
-	
-
-}
-
-
-
-
-*/

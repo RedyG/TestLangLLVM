@@ -4,6 +4,8 @@
 enum class TokenType {
     Invalid,
 
+    Eq,
+
     Add,
     Sub,
     Mul,
@@ -23,6 +25,10 @@ enum class TokenType {
     Pub,
     Struct,
     Return,
+    If,
+    Else,
+    True,
+    False,
 
     Identifier,
     Float,

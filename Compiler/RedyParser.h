@@ -23,7 +23,6 @@ private:
 	VisibilityAST ParseVisibility();
 	std::vector<ParamAST> ParseParams();
 	std::variant<FuncAST, FieldAST, ProtoAST> ParseMember();
-	std::unique_ptr<StructAST> ParseStruct();
 
 	RedyLexer m_lexer;
 };   

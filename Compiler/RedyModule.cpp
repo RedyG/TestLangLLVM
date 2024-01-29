@@ -1,4 +1,5 @@
 #include "RedyModule.h"
+#include "BuiltInTypes.h"
 #pragma warning(disable:4146)
 #include "llvm/IR/IRBuilder.h"
 #include "Logger.h"
@@ -6,9 +7,36 @@
 using namespace llvm;
 
 TypeDeclAST* RedyModule::GetType(TypeAST typeAST, LLVMContext& context) {
+	auto builtInType = BuiltInTypes::Get(typeAST.Name);
+	if (builtInType != nullptr)
+		return builtInType;
+
+	auto importedType = m_importedTypes.find(typeAST);
+	if (importedType != m_importedTypes.end()) {
+		return importedType->second;
+	}
+
+	auto type = m_typeDecls.find(typeAST);
+	if (type != m_typeDecls.end()) {
+		if (type->second->LLVMType == nullptr) {
+			type->second->GenLLVMType(context, *this);
+		}
+		return type->second.get();
+	}
+
+	Logger::Error(std::format("The type {0} doesn't exist.", type->second->Name));
+	return UnknownType;
+}
+
+
+TypeDeclAST* RedyModule::GetPubType(TypeAST typeAST, LLVMContext& context) {
 	auto type = m_typeDecls.find(typeAST);
 	if (type == m_typeDecls.end()) {
 		Logger::Error(std::format("The type {0} doesn't exist.", type->second->Name));
+		return UnknownType;
+	}
+	if (type->second->Visibility != VisibilityAST::Public) {
+		Logger::Error(std::format("The type \"{}\" is private.", typeAST.Name));
 		return UnknownType;
 	}
 
@@ -27,8 +55,29 @@ void RedyModule::AddFunc(std::string_view name, FuncAST func) {
 }
 
 FuncAST* RedyModule::GetFunc(std::string_view name) {
+	auto importedFunc = m_importedFuncs.find(name);
+
+	if (importedFunc != m_importedFuncs.end()) {
+		return importedFunc->second;
+	}
+
+	auto func = m_funcs.find(name);
+	if (func != m_funcs.end()) {
+		return &func->second;
+	}
+
+	Logger::Error(std::format("The function \"{}\" does not exist.", name));
+	return nullptr;
+}
+
+FuncAST* RedyModule::GetPubFunc(std::string_view name) {
 	auto func = m_funcs.find(name);
 	if (func == m_funcs.end()) {
+		Logger::Error(std::format("The function \"{}\" does not exist.", name));
+		return nullptr;
+	}
+	if (func->second.Proto.Visibility != VisibilityAST::Public) {
+		Logger::Error(std::format("The function \"{}\" is private.", name));
 		return nullptr;
 	}
 	return &func->second;
