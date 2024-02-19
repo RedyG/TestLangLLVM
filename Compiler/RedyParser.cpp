@@ -2,6 +2,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include "Logger.h"
 #include "TypeDeclAST.h"
 
 template<typename T, typename S>
@@ -34,11 +35,13 @@ struct RedyOperator {
 };
 
 std::map<TokenType, RedyOperator> operators = {
-	{ TokenType::Add, RedyOperator(1, true) },
-	{ TokenType::Sub, RedyOperator(1, true) },
-	{ TokenType::Mul, RedyOperator(2, true) },
-	{ TokenType::Div, RedyOperator(2, true) },
-	{ TokenType::Eq , RedyOperator(3, true) },
+	{ TokenType::And , RedyOperator(0, true) },
+	{ TokenType::Or , RedyOperator(1, true) },
+	{ TokenType::Eq , RedyOperator(2, true) },
+	{ TokenType::Add, RedyOperator(3, true) },
+	{ TokenType::Sub, RedyOperator(3, true) },
+	{ TokenType::Mul, RedyOperator(4, true) },
+	{ TokenType::Div, RedyOperator(4, true) },
 };
 
 bool IsUnary(TokenType type) {
@@ -143,7 +146,7 @@ ExprPtr RedyParser::ParseUnary() {
 	return std::move(ParsePostfix());
 }
 
-const int StatementPrecendence = -1;
+constexpr int StatementPrecendence = -1;
 
 std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precedence) {
 	if (precedence == StatementPrecendence) {
@@ -295,11 +298,72 @@ std::variant<FuncAST, FieldAST, ProtoAST> RedyParser::ParseMember() {
 	}
 }
 
-RedyModule RedyParser::Parse(std::string_view input) {
+UseDeclAST RedyParser::ParseUseDecl() {
+	UseDeclAST use;
+	do {
+		if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+			do {
+				if (m_lexer.Current().Type == TokenType::Identifier) {
+					use.Imports.push_back(m_lexer.Current().Content);
+					m_lexer.Consume();
+				}
+
+				if (m_lexer.ConsumeIf(TokenType::RCurly) && m_lexer.ConsumeIf(TokenType::SemiColon))
+					return use;
+
+			} while (m_lexer.ConsumeIf(TokenType::Comma));
+		}
+
+		std::string_view content;
+		if (m_lexer.Current().Type == TokenType::Identifier) {
+			content = m_lexer.Current().Content;
+			m_lexer.Consume();
+		}
+
+		if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
+			use.Imports.push_back(content);
+			return use;
+		}
+
+		use.Path.push_back(content);
+	} while (m_lexer.ConsumeIf(TokenType::Colon));
+}
+
+RedyModule RedyParser::ParseDecls(Project* project) {
+	std::string_view name;
+	std::vector<UseDeclAST> uses;
+	while (true) {
+		if (m_lexer.ConsumeIf(TokenType::Mod)) {
+			if (name != "")
+				Logger::Error("Found more than one mod declaration. There can only be one per file.");
+
+			if (m_lexer.Current().Type == TokenType::Identifier) {
+				name = m_lexer.Current().Content;
+				m_lexer.Consume();
+			} else
+				Logger::Error("The mod keyword must be followed by the name of the module");
+				
+
+			if (!m_lexer.ConsumeIf(TokenType::SemiColon))
+				Logger::Error("A mod declaration must end with a semi colon");
+
+		}
+		else if (m_lexer.ConsumeIf(TokenType::Use)) {
+			uses.push_back(ParseUseDecl());
+		} else {
+			break;
+		}
+
+	}
+
+	return RedyModule(name, std::move(uses), project);
+}
+
+RedyModule RedyParser::Parse(Project* project, std::string_view input) {
 	m_lexer = CreateRedyLexer(input);
 	m_lexer.Consume();
 
-	RedyModule module;
+	auto module = ParseDecls(project);
 	
 	do {
 		auto visibility = ParseVisibility();
@@ -320,7 +384,7 @@ RedyModule RedyParser::Parse(std::string_view input) {
 							methods.emplace(method.Proto.Name, std::move(method));
 						}
 						else {
-							throw std::exception("Methods in structs must contain bodies");
+							throw std::exception("Methods in structs must have bodies");
 						}
 					}
 					m_lexer.Consume();

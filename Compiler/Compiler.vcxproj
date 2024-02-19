@@ -141,7 +141,7 @@
     <ClCompile Include="GenLLVMType.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="Modules.cpp" />
+    <ClCompile Include="Project.cpp" />
     <ClCompile Include="RedyModule.cpp" />
     <ClCompile Include="RedyParser.cpp" />
     <ClCompile Include="RedyLexer.cpp" />
@@ -150,7 +150,6 @@
     <ClCompile Include="StatementAST.cpp" />
     <ClCompile Include="TypeDeclAST.cpp" />
     <ClCompile Include="TypeCheck.cpp" />
-    <ClCompile Include="UnknownType.cpp" />
     <ClCompile Include="VariableAST.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,9 +167,10 @@
     <ClInclude Include="FuncAST.h" />
     <ClInclude Include="IfStatement.h" />
     <ClInclude Include="IntExpr.h" />
+    <ClInclude Include="NamespaceAccessExpr.h" />
     <ClInclude Include="ParamAST.h" />
+    <ClInclude Include="Project.h" />
     <ClInclude Include="RedyModule.h" />
-    <ClInclude Include="Modules.h" />
     <ClInclude Include="ProtoAST.h" />
     <ClInclude Include="ReturnStatement.h" />
     <ClInclude Include="StatementAST.h" />
@@ -178,7 +178,7 @@
     <ClInclude Include="SymbolAST.h" />
     <ClInclude Include="TypeAST.h" />
     <ClInclude Include="UnaryExpr.h" />
-    <ClInclude Include="UnknownType.h" />
+    <ClInclude Include="UseDeclAST.h" />
     <ClInclude Include="VariableAST.h" />
     <ClInclude Include="VariableDeclStatement.h" />
     <ClInclude Include="VariableExpr.h" />

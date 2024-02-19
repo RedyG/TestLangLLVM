@@ -2,6 +2,7 @@
 #include "BuiltInTypes.h"
 #include <llvm/IR/Verifier.h>
 #include <fstream>
+#include "Project.h"
 using namespace llvm;
 
 Value* IntExpr::CodeGen(CodeGenCtx ctx) {
@@ -18,9 +19,11 @@ Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 	std::cout << lhs->getType() << "\n";
 	std::cout << rhs->getType() << "\n";
 	switch (Op) {
+	case TokenType::Or: return ctx.Builder.CreateOr(lhs, rhs, "ortmp");
+	case TokenType::And: return ctx.Builder.CreateAnd(lhs, rhs, "andtmp");
 	case TokenType::Eq: return ctx.Builder.CreateFCmpOEQ(lhs, rhs, "cmptmp");
 	case TokenType::Add: return ctx.Builder.CreateFAdd(lhs, rhs, "addtmp");
-	case TokenType::Sub: return nullptr;
+	case TokenType::Sub: return ctx.Builder.CreateFSub(lhs, rhs, "subtmp");
 	case TokenType::Mul: return nullptr;
 	case TokenType::Div: return nullptr;
 	default: throw std::exception("invalid op");
@@ -34,7 +37,7 @@ Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
-	auto func = ctx.RedyMod.GetPubFunc(dynamic_cast<VariableExpr&>(*Callee).Name);
+	auto func = ctx.RedyMod.GetFunc(dynamic_cast<VariableExpr&>(*Callee).Name);
 	std::vector<Value*> params;
 	for (auto& param : Params) {
 		params.push_back(param->CodeGen(ctx));
@@ -154,5 +157,11 @@ void RedyModule::CodeGen(CodeGenCtx ctx) {
 
 	for (auto& funcEntry : m_funcs) {
 		funcEntry.second.CodeGen(ctx);
+	}
+}
+
+void Project::CodeGen(Module& module, IRBuilder<>& builder) {
+	for (auto& redyMod : m_modules) {
+		redyMod.second.CodeGen(CodeGenCtx(module, redyMod.second, builder));
 	}
 }

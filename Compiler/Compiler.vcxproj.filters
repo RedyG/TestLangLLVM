@@ -41,17 +41,11 @@
     <ClCompile Include="GenLLVMType.cpp">
       <Filter>Passes</Filter>
     </ClCompile>
-    <ClCompile Include="Modules.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RedyModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VariableAST.cpp">
       <Filter>AST</Filter>
-    </ClCompile>
-    <ClCompile Include="UnknownType.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ExprAST.cpp">
       <Filter>AST</Filter>
@@ -66,6 +60,9 @@
       <Filter>AST</Filter>
     </ClCompile>
     <ClCompile Include="BuiltInTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Project.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -154,12 +151,6 @@
     <ClInclude Include="TypeDeclAST.h">
       <Filter>AST</Filter>
     </ClInclude>
-    <ClInclude Include="UnknownType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Modules.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RedyModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -177,6 +168,15 @@
     </ClInclude>
     <ClInclude Include="BuiltInTypes.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NamespaceAccessExpr.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="UseDeclAST.h">
+      <Filter>AST</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

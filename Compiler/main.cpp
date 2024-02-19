@@ -1,6 +1,6 @@
 #include <iostream>
-#include "Modules.h"
 #include "BuiltInTypes.h"
+#include "Project.h"
 #include "RedyParser.h"
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
@@ -44,36 +44,41 @@ void main() {
 	InitModule();
 	try {
 		RedyParser parser;
-		/*auto defaultTypes = parser.Parse(R"(
-			pub struct f64 {}
-			pub struct bool {} 
-			pub struct i32 {}
-		)");*/
+		Project project;
+		RedyModule fibModule = parser.Parse(&project, R"(
+			mod Fib;
 
-		RedyModule module(parser.Parse(R"(
+			pub f64 fib(f64 n) {
+				if n == 0.0 or n == 1.0 {
+					return n;
+				}
+
+				return fib(n - 1.0) + fib(n - 2.0);
+			}
+		)");
+
+		RedyModule module = parser.Parse(&project, R"(
+			mod main;
+			use Fib:fib;
+
 			pub struct TestStruct {
 				i32 Test;
 
 				f64 main() {
-					f64 a = 2.0;
-					if a == 2.0 {
-						return 0.0;
-					}
-					return 3.0;
+					return fib(30.0);
 				}
 			} 
+		)");
 
-			f64 other(f64 a) => a + 2.0;
-		)"));
-
-		//AddModule("Main", std::move(module));
+		project.AddModule(std::move(fibModule));
+		project.AddModule(std::move(module));
 
 		BuiltInTypes::Init(*TheContext);
 
-		//defaultTypes.Register(*TheModule);
-		module.Register(*TheModule);
-		module.TypeCheck(*TheContext);
-		module.CodeGen(CodeGenCtx(*TheModule, module, Builder));
+		project.Register(*TheModule);
+		project.TypeCheck(*TheContext);
+		project.CodeGen(*TheModule, Builder);
+
 		RunCode(std::move(TheModule), std::move(TheContext));
 	}
 	catch (const std::exception& e) {

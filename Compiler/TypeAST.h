@@ -12,6 +12,10 @@ public:
 	bool operator == (const TypeAST& other) const {
 		return Name == other.Name;
 	}
+
+	operator std::string_view() const {
+		return Name;
+	}
 };
 
 template <>

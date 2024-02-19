@@ -4,7 +4,7 @@
 
 class RedyParser {
 public:
-	RedyModule Parse(std::string_view input);
+	RedyModule Parse(Project* project, std::string_view input);
 
 	RedyParser() : m_lexer(CreateRedyLexer("")) {}
 private:
@@ -22,6 +22,8 @@ private:
 	TypeAST ParseTypeUnwrap();
 	VisibilityAST ParseVisibility();
 	std::vector<ParamAST> ParseParams();
+	RedyModule ParseDecls(Project* project);
+	UseDeclAST ParseUseDecl();
 	std::variant<FuncAST, FieldAST, ProtoAST> ParseMember();
 
 	RedyLexer m_lexer;

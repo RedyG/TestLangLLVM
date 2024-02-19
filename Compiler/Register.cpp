@@ -2,9 +2,12 @@
 #include "Logger.h"
 #include <format>
 #include "TypeDeclAST.h"
+#include "Project.h"
 using namespace llvm;
 
 void RedyModule::Register(Module& module) {
+	RegisterImports(module.getContext());
+
 	for (auto& typeEntry : m_typeDecls) {
 		for (auto& methodEntry : typeEntry.second->Methods) {
 			methodEntry.second.Register(*this, module);
@@ -15,6 +18,29 @@ void RedyModule::Register(Module& module) {
 	}
 }
 
+void RedyModule::RegisterImports(LLVMContext& context) {
+	for (auto useDecl : m_useDecls) {
+		RedyModule* module = nullptr;
+
+		for (auto moduleName : useDecl.Path) {
+			if (module == nullptr)
+				module = m_project->GetModule(moduleName);
+			else
+				module = module->GetChild(moduleName);
+		}
+
+		if (module) {
+			for (auto import : useDecl.Imports) {
+				if (auto type = module->GetPubType(import, context))
+					m_importedTypes.emplace(TypeAST(type->Name), type);
+				else if (auto func = module->GetPubFunc(import))
+					m_importedFuncs.emplace(func->Proto.Name, func);
+				else if (auto child = module->GetChild(import))
+					m_importedModules.emplace(child->Name, child);
+			}
+		}
+	}
+}
 
 
 void FuncAST::Register(RedyModule& redyModule, Module& module) {
@@ -42,17 +68,7 @@ void FuncAST::Register(RedyModule& redyModule, Module& module) {
 	}
 }
 
-/*pub trait Iterator<T>
-* {
-*	pub T Next();
-* }
-
-
-
-for i in Range(0, i => i < 10, ref i => i++)
-for (int i = 0; i < 10; i++) {
+void Project::Register(llvm::Module& llvmModule) {
+	for (auto& module : m_modules)
+		module.second.Register(llvmModule);
 }
-
-
-
-*/

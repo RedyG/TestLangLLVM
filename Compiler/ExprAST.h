@@ -1,5 +1,4 @@
 #pragma once
-#include "UnknownType.h"
 #include "CodeGenCtx.h"
 class TypeDeclAST;
 #pragma warning(disable:4146)
@@ -7,7 +6,7 @@ class TypeDeclAST;
 
 class ExprAST {
 public:
-	TypeDeclAST* TypeDecl = UnknownType;
+	TypeDeclAST* TypeDecl = nullptr;
 
 	// not using the visitor pattern because every passes return different types
 	// so I would have to deal with std::any or something

@@ -70,6 +70,8 @@ MatchResult MatchInt(std::string_view input) {
 }
 
 std::vector<TokenMatcher<TokenType>> tokenMatchers {
+	TokenMatcher<TokenType>(TokenType::Or, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "or"); }),
+	TokenMatcher<TokenType>(TokenType::And, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "and"); }),
 	TokenMatcher<TokenType>(TokenType::Eq, [](std::string_view input) -> MatchResult { return MatchString(input, "=="); }),
 	TokenMatcher<TokenType>(TokenType::Add, [](std::string_view input) -> MatchResult { return MatchChar(input, '+'); }),
 	TokenMatcher<TokenType>(TokenType::Sub, [](std::string_view input) -> MatchResult { return MatchChar(input, '-'); }),
@@ -79,6 +81,7 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 	TokenMatcher<TokenType>(TokenType::Equal, [](std::string_view input) -> MatchResult { return MatchChar(input, '='); }),
 	TokenMatcher<TokenType>(TokenType::Dot, [](std::string_view input) -> MatchResult { return MatchChar(input, '.'); }),
 	TokenMatcher<TokenType>(TokenType::SemiColon, [](std::string_view input) -> MatchResult { return MatchChar(input, ';'); }),
+	TokenMatcher<TokenType>(TokenType::Colon, [](std::string_view input) -> MatchResult { return MatchChar(input, ':'); }),
 	TokenMatcher<TokenType>(TokenType::Comma, [](std::string_view input) -> MatchResult { return MatchChar(input, ','); }),
 	TokenMatcher<TokenType>(TokenType::LParen, [](std::string_view input) -> MatchResult { return MatchChar(input, '('); }),
 	TokenMatcher<TokenType>(TokenType::RParen, [](std::string_view input) -> MatchResult { return MatchChar(input, ')'); }),
@@ -91,6 +94,8 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 	TokenMatcher<TokenType>(TokenType::Else, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "else"); }),
 	TokenMatcher<TokenType>(TokenType::True, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "true"); }),
 	TokenMatcher<TokenType>(TokenType::False, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "false"); }),
+	TokenMatcher<TokenType>(TokenType::Use, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "use"); }),
+	TokenMatcher<TokenType>(TokenType::Mod, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "mod"); }),
 	TokenMatcher<TokenType>(TokenType::Identifier, MatchIdentifier),
 	TokenMatcher<TokenType>(TokenType::Float, MatchFloat),
 	TokenMatcher<TokenType>(TokenType::Int, MatchInt),

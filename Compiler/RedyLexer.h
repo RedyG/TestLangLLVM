@@ -4,6 +4,9 @@
 enum class TokenType {
     Invalid,
 
+
+    Or,
+    And,
     Eq,
 
     Add,
@@ -15,6 +18,7 @@ enum class TokenType {
     Equal,
     Dot,
     SemiColon,
+    Colon,
     Comma,
 
     LParen,
@@ -29,6 +33,8 @@ enum class TokenType {
     Else,
     True,
     False,
+    Use,
+    Mod,
 
     Identifier,
     Float,

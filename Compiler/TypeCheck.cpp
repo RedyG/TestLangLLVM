@@ -5,12 +5,12 @@
 #include <format>
 #include <stack>
 #include "TypeDeclAST.h"
-#include "UnknownType.h"
+#include "Project.h"
 #include "BuiltInTypes.h"
 
 std::vector<SymbolAST*> symbols;
 std::stack<int> symbolsCount;
-TypeDeclAST* ReturnType = UnknownType;
+TypeDeclAST* ReturnType = nullptr;
 
 SymbolAST* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
@@ -49,13 +49,18 @@ TypeDeclAST* BinOpExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& conte
 	auto lhs = LHS->TypeCheck(module, context);
 	auto rhs = RHS->TypeCheck(module, context);
 
-	if (lhs->IsUnknown() || rhs->IsUnknown()) {
-		return UnknownType;
+
+	// temporary:
+	if (Op == TokenType::Or || Op == TokenType::And)
+		return BuiltInTypes::BoolDecl;
+
+	if (lhs == nullptr || rhs == nullptr) {
+		return nullptr;
 	}
 
 	if (lhs != rhs) {
 		Logger::Error(std::format("Couldn't {0} values of type {1} and {2}", GetOpName(Op), lhs->Name, rhs->Name));
-		return UnknownType;
+		return nullptr;
 	}
 
 	return lhs;
@@ -65,13 +70,13 @@ TypeDeclAST* VariableExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& co
 	Symbol = FindSymbol(Name);
 	if (Symbol == nullptr) {
 		Logger::Error(std::format("Tried to use undeclared variable {0}", Name));
-		return UnknownType;
+		return nullptr;
 	}
 	return module.GetType(Symbol->Variable.Type, context);
 }
 
 TypeDeclAST* CallExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	auto func = module.GetPubFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
+	auto func = module.GetFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
 	for (auto& param : Params) {
 		param->TypeCheck(module, context);
 		// todo
@@ -98,7 +103,7 @@ void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 		auto& expr = std::get<ExprPtr>(Body);
 		auto bodyType = expr->TypeCheck(module, context);
 
-		if (bodyType->IsUnknown())
+		if (bodyType == nullptr)
 			return;
 
 		if (bodyType != ReturnType)
@@ -154,9 +159,14 @@ void BlockStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& c
 
 void ReturnStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
 	auto exprType = Expr->TypeCheck(module, context);
-	if (exprType->IsUnknown())
+	if (exprType == nullptr)
 		return;
 
 	if (exprType->LLVMType != ReturnType->LLVMType)
 		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, exprType->Name));
+}
+
+void Project::TypeCheck(llvm::LLVMContext& context) {
+	for (auto& module : m_modules)
+		module.second.TypeCheck(context);
 }
