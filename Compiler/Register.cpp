@@ -31,11 +31,11 @@ void RedyModule::RegisterImports(LLVMContext& context) {
 
 		if (module) {
 			for (auto import : useDecl.Imports) {
-				if (auto type = module->GetPubType(import, context))
+				if (auto type = module->GetPubType(import, context, false))
 					m_importedTypes.emplace(TypeAST(type->Name), type);
-				else if (auto func = module->GetPubFunc(import))
+				else if (auto func = module->GetPubFunc(import, false))
 					m_importedFuncs.emplace(func->Proto.Name, func);
-				else if (auto child = module->GetChild(import))
+				else if (auto child = module->GetChild(import, false))
 					m_importedModules.emplace(child->Name, child);
 			}
 		}

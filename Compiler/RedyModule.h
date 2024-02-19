@@ -17,13 +17,13 @@ public:
 	void TypeCheck(llvm::LLVMContext& context);
 	void CodeGen(CodeGenCtx ctx);
 	void Register(llvm::Module& module);
-	TypeDeclAST* GetPubType(TypeAST typeAST, llvm::LLVMContext& context);
+	TypeDeclAST* GetPubType(TypeAST typeAST, llvm::LLVMContext& context, bool error = true);
 	TypeDeclAST* GetType(TypeAST typeAST, llvm::LLVMContext& context);
 	void AddType(TypeAST typeAST, std::unique_ptr<TypeDeclAST> typeDecl);
 	void AddFunc(std::string_view name, FuncAST func);
-	FuncAST* GetPubFunc(std::string_view name);
+	FuncAST* GetPubFunc(std::string_view name, bool error = true);
 	FuncAST* GetFunc(std::string_view name);
-	RedyModule* GetChild(std::string_view name);
+	RedyModule* GetChild(std::string_view name, bool error = true);
 	RedyModule(std::string_view name, std::vector<UseDeclAST> useDecls, Project* project) : Name(name), m_useDecls(std::move(useDecls)), m_project(project) {}
 
 private:

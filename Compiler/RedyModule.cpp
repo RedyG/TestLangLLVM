@@ -29,14 +29,16 @@ TypeDeclAST* RedyModule::GetType(TypeAST typeAST, LLVMContext& context) {
 }
 
 
-TypeDeclAST* RedyModule::GetPubType(TypeAST typeAST, LLVMContext& context) {
+TypeDeclAST* RedyModule::GetPubType(TypeAST typeAST, LLVMContext& context, bool error) {
 	auto type = m_typeDecls.find(typeAST);
 	if (type == m_typeDecls.end()) {
-		Logger::Error(std::format("The type {0} doesn't exist.", (std::string_view)typeAST));
+		if (error)
+			Logger::Error(std::format("The type {0} doesn't exist.", (std::string_view)typeAST));
 		return nullptr;
 	}
 	if (type->second->Visibility != VisibilityAST::Public) {
-		Logger::Error(std::format("The type \"{}\" is private.", (std::string_view)typeAST));
+		if (error)
+			Logger::Error(std::format("The type \"{}\" is private.", (std::string_view)typeAST));
 		return nullptr;
 	}
 
@@ -70,23 +72,26 @@ FuncAST* RedyModule::GetFunc(std::string_view name) {
 	return nullptr;
 }
 
-FuncAST* RedyModule::GetPubFunc(std::string_view name) {
+FuncAST* RedyModule::GetPubFunc(std::string_view name, bool error) {
 	auto func = m_funcs.find(name);
 	if (func == m_funcs.end()) {
-		Logger::Error(std::format("The function \"{}\" does not exist.", name));
+		if (error)
+			Logger::Error(std::format("The function \"{}\" does not exist.", name));
 		return nullptr;
 	}
 	if (func->second.Proto.Visibility != VisibilityAST::Public) {
-		Logger::Error(std::format("The function \"{}\" is private.", name));
+		if (error)
+			Logger::Error(std::format("The function \"{}\" is private.", name));
 		return nullptr;
 	}
 	return &func->second;
 }
 
-RedyModule* RedyModule::GetChild(std::string_view name) {
+RedyModule* RedyModule::GetChild(std::string_view name, bool error) {
 	auto module = m_children.find(name);
 	if (module == m_children.end()) {
-		Logger::Error(std::format("The module \"{}\" does not exist.", name));
+		if (error)
+			Logger::Error(std::format("The module \"{}\" does not exist.", name));
 		return nullptr;
 	}
 	return &module->second;
