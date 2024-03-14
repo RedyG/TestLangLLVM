@@ -176,6 +176,7 @@
     <ClInclude Include="StatementAST.h" />
     <ClInclude Include="StructAST.h" />
     <ClInclude Include="SymbolAST.h" />
+    <ClInclude Include="TraitAST.h" />
     <ClInclude Include="TypeAST.h" />
     <ClInclude Include="UnaryExpr.h" />
     <ClInclude Include="UseDeclAST.h" />

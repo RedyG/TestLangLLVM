@@ -57,9 +57,14 @@ void main() {
 			}
 		)");
 
-		RedyModule module = parser.Parse(&project, R"(
+ 		RedyModule module = parser.Parse(&project, R"(
 			mod main;
 			use Fib:fib;
+
+			trait TestTrait {
+				pub f64 next();
+				pub f64 double() => next() + next();
+			}
 
 			pub struct TestStruct {
 				i32 Test;

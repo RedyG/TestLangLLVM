@@ -87,6 +87,7 @@ std::vector<TokenMatcher<TokenType>> tokenMatchers {
 	TokenMatcher<TokenType>(TokenType::RParen, [](std::string_view input) -> MatchResult { return MatchChar(input, ')'); }),
 	TokenMatcher<TokenType>(TokenType::LCurly, [](std::string_view input) -> MatchResult { return MatchChar(input, '{'); }),
 	TokenMatcher<TokenType>(TokenType::RCurly, [](std::string_view input) -> MatchResult { return MatchChar(input, '}'); }),
+	TokenMatcher<TokenType>(TokenType::Trait, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "trait"); }),
 	TokenMatcher<TokenType>(TokenType::Pub, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "pub"); }),
 	TokenMatcher<TokenType>(TokenType::Struct, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "struct"); }),
 	TokenMatcher<TokenType>(TokenType::Return, [](std::string_view input) -> MatchResult { return MatchKeyword(input, "return"); }),

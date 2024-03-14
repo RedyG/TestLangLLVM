@@ -42,3 +42,10 @@ private:
 	std::unordered_map<TypeAST, TypeDeclAST*> m_importedTypes;
 	std::unordered_map<std::string_view, RedyModule*> m_importedModules;
 };
+
+/*
+
+struct myTest {
+}
+
+*/

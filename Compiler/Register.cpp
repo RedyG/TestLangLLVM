@@ -40,6 +40,7 @@ void RedyModule::RegisterImports(LLVMContext& context) {
 			}
 		}
 	}
+	// TODO: potentially set m_usesDecl to an empty vector to free memory
 }
 
 

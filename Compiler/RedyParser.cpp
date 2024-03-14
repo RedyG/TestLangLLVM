@@ -333,6 +333,11 @@ RedyModule RedyParser::ParseDecls(Project* project) {
 	std::string_view name;
 	std::vector<UseDeclAST> uses;
 	while (true) {
+		if (m_lexer.ConsumeIf(TokenType::Use)) {
+			uses.push_back(ParseUseDecl());
+			continue;
+		}
+
 		if (m_lexer.ConsumeIf(TokenType::Mod)) {
 			if (name != "")
 				Logger::Error("Found more than one mod declaration. There can only be one per file.");
@@ -343,20 +348,81 @@ RedyModule RedyParser::ParseDecls(Project* project) {
 			} else
 				Logger::Error("The mod keyword must be followed by the name of the module");
 				
-
 			if (!m_lexer.ConsumeIf(TokenType::SemiColon))
 				Logger::Error("A mod declaration must end with a semi colon");
 
-		}
-		else if (m_lexer.ConsumeIf(TokenType::Use)) {
-			uses.push_back(ParseUseDecl());
-		} else {
-			break;
+			continue;
 		}
 
+		break;
 	}
 
 	return RedyModule(name, std::move(uses), project);
+}
+
+TraitAST RedyParser::ParseTrait(VisibilityAST visibility) {
+	m_lexer.Consume();
+
+	if (m_lexer.Current().Type == TokenType::Identifier) {
+		auto name = m_lexer.Current().Content;
+		m_lexer.Consume();
+
+		if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+			std::unordered_map<std::string_view, FuncAST> methods;
+			std::unordered_map<std::string_view, ProtoAST> protos;
+
+			while (m_lexer.Current().Type != TokenType::RCurly) {
+				auto member = ParseMember();
+
+				if (std::holds_alternative<FieldAST>(member))
+					throw std::exception("No field in trait");
+
+				if (std::holds_alternative<ProtoAST>(member)) {
+					auto proto = std::get<ProtoAST>(std::move(member));
+					protos.emplace(proto.Name, std::move(proto));
+				} else if (std::holds_alternative<FuncAST>(member)) {
+					auto func = std::get<FuncAST>(std::move(member));
+					methods.emplace(func.Proto.Name, std::move(func));
+				}
+			}
+
+			m_lexer.Consume();
+			return TraitAST(std::move(protos), visibility, name, std::move(methods));
+		}
+	}
+}
+
+StructAST RedyParser::ParseStruct(VisibilityAST visibility) {
+	m_lexer.Consume();
+
+	if (m_lexer.Current().Type == TokenType::Identifier) {
+		auto name = m_lexer.Current().Content;
+		m_lexer.Consume();
+
+		if (m_lexer.ConsumeIf(TokenType::LCurly)) {
+			std::vector<FieldAST> fields;
+			std::unordered_map<std::string_view, FuncAST> methods;
+
+			while (m_lexer.Current().Type != TokenType::RCurly) {
+				auto member = ParseMember();
+
+				if (std::holds_alternative<FieldAST>(member))
+					fields.emplace_back(std::get<FieldAST>(std::move(member)));
+				else if (std::holds_alternative<FuncAST>(member)) {
+					auto method = std::move(std::get<FuncAST>(std::move(member)));
+					methods.emplace(method.Proto.Name, std::move(method));
+				} else {
+					throw std::exception("Methods in structs must have bodies");
+				}
+
+			}
+
+			m_lexer.Consume();
+			return StructAST(std::move(fields), visibility, name, std::move(methods));
+		}
+	}
+	
+	throw std::exception("invalid type definition");
 }
 
 RedyModule RedyParser::Parse(Project* project, std::string_view input) {
@@ -367,39 +433,19 @@ RedyModule RedyParser::Parse(Project* project, std::string_view input) {
 	
 	do {
 		auto visibility = ParseVisibility();
-		if (m_lexer.ConsumeIf(TokenType::Struct)) {
-			if (m_lexer.Current().Type == TokenType::Identifier) {
-				auto name = m_lexer.Current().Content;;
-				m_lexer.Consume();
-				if (m_lexer.ConsumeIf(TokenType::LCurly)) {
-					std::vector<FieldAST> fields;
-					std::unordered_map<std::string_view, FuncAST> methods;
-					while (m_lexer.Current().Type != TokenType::RCurly) {
-						auto member = ParseMember();
-						if (std::holds_alternative<FieldAST>(member)) {
-							fields.emplace_back(std::get<FieldAST>(std::move(member)));
-						}
-						else if (std::holds_alternative<FuncAST>(member)) {
-							auto method = std::move(std::get<FuncAST>(std::move(member)));
-							methods.emplace(method.Proto.Name, std::move(method));
-						}
-						else {
-							throw std::exception("Methods in structs must have bodies");
-						}
-					}
-					m_lexer.Consume();
-					module.AddType(name, std::make_unique<StructAST>(std::move(fields), visibility, name, std::move(methods)));
-				}
-			}
-			else {
-				throw std::exception("invalid type definition");
-			}
-		}
-		else {
+		if (m_lexer.Current().Type == TokenType::Trait) {
+			auto trait = ParseTrait(visibility);
+			auto name = trait.Name;
+			module.AddType(name, std::make_unique<TraitAST>(std::move(trait)));
+		} else if (m_lexer.Current().Type == TokenType::Struct) {
+			auto structAST = ParseStruct(visibility);
+			auto name = structAST.Name;
+			module.AddType(name, std::make_unique<StructAST>(std::move(structAST)));
+		} else {
 			auto member = ParseMember();
-			if (!std::holds_alternative<FuncAST>(member)) {
+			if (!std::holds_alternative<FuncAST>(member))
 				throw std::exception("we only support static methods for now bro");
-			}
+			
 			auto func = std::move(std::get<FuncAST>(std::move(member)));
 			func.Proto.Visibility = visibility; // important
 			auto name = func.Proto.Name;

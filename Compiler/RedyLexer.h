@@ -26,6 +26,7 @@ enum class TokenType {
     LCurly,
     RCurly,
 
+    Trait,
     Pub,
     Struct,
     Return,

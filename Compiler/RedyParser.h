@@ -1,6 +1,7 @@
 #pragma once
 #include "RedyLexer.h"
 #include "AST.h"
+#include "TraitAST.h"
 
 class RedyParser {
 public:
@@ -24,21 +25,9 @@ private:
 	std::vector<ParamAST> ParseParams();
 	RedyModule ParseDecls(Project* project);
 	UseDeclAST ParseUseDecl();
+	StructAST ParseStruct(VisibilityAST visibility);
+	TraitAST ParseTrait(VisibilityAST visibility);
 	std::variant<FuncAST, FieldAST, ProtoAST> ParseMember();
 
 	RedyLexer m_lexer;
 };   
-
-
-
-/*
-
-class AGAF : fwaiojfw, wfawfw ,fawf {
- : 
-}
-
-extend AGAF : 8fiawf, fwaf {
-	
-}
-
-*/

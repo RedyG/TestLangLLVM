@@ -178,5 +178,8 @@
     <ClInclude Include="UseDeclAST.h">
       <Filter>AST</Filter>
     </ClInclude>
+    <ClInclude Include="TraitAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
