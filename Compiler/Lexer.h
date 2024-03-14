@@ -3,11 +3,22 @@
 #include <vector>
 #include <functional>
 
+struct TextPos {
+    int LineX;
+    int LineY;
+    int Pos;
+
+    TextPos(int lineX, int lineY, int pos) : LineX(lineX), LineY(lineY), Pos(pos) {}
+    TextPos() : LineX(0), LineY(0), Pos(0) {}
+};
+
 template<class T> struct Token
 {
 public:
     T Type;
     std::string_view Content;
+    TextPos Start;
+    TextPos End;
 
     Token(T type, std::string_view content)
     {
@@ -21,18 +32,23 @@ struct MatchResult
 public:
     bool Matched;
     std::string_view Content;
-    int Length;
+    TextPos Start;
+    TextPos End;
 
-    MatchResult() : MatchResult(false, 0) {}
+    // No match
+    MatchResult() : MatchResult(false, TextPos(), 0) {}
 
-    MatchResult(bool matched, int length) : MatchResult(matched, length, std::string_view()) {}
+    // Single line match without content
+    MatchResult(bool matched, TextPos start, int length) : MatchResult(matched, start, length, "") {}
 
-    MatchResult(bool matched, int length, std::string_view content)
-    {
-        Matched = matched;
-        Length = length;
-        Content = content;
+    // Single line match
+    MatchResult(bool matched, TextPos start, int length, std::string_view content) : Matched(matched), Start(start), Content(content) {
+        End = start;
+        End.Pos += length;
     }
+
+    // Multi line match
+    MatchResult(bool matched, TextPos start, TextPos end, std::string_view content) : Matched(matched), Start(start), End(end), Content(content) {}
 };
 
 template<class T> struct TokenMatcher
@@ -68,7 +84,7 @@ public:
 
 
     // returns the current token.
-    Token<T> Current() const
+    inline Token<T> Current() const
     {
         return m_token;
     }
@@ -103,6 +119,7 @@ public:
         throw std::exception("couldn't parse token");
     }
 
+    // If the current token matches the provided type, it will consume it and return true.
     bool ConsumeIf(T type) {
         if (m_token.Type == type) {
             Consume();
