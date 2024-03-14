@@ -58,22 +58,21 @@ void main() {
 		)");
 
  		RedyModule module = parser.Parse(&project, R"(
-			mod main;
-			use Fib:fib;
+mod main;
+use Fib:fib;
 
-			trait TestTrait {
-				pub f64 next();
-				pub f64 double() => next() + next();
-			}
+trait TestTrait {
+	pub f64 next();
+	pub f64 double() => next() + next();
+}
 
-			pub struct TestStruct {
-				i32 Test;
+pub struct TestStruct {
+	i32 Test;
 
-				f64 main() {
-					return fib(30.0);
-				}
-			} 
-		)");
+	f64 main() {
+		return fib(30.0);
+	}
+})");
 
 		project.AddModule(std::move(fibModule));
 		project.AddModule(std::move(module));
