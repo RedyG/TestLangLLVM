@@ -5,10 +5,10 @@ class BoolExpr : public ExprAST {
 public:
 	bool Value;
 
-	BoolExpr(bool value) : Value(value) {}
+	BoolExpr(bool value, NodeAST node) : Value(value), ExprAST(node) {}
 
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 private:
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };

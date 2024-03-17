@@ -1,6 +1,7 @@
 #include <iostream>
 #include "BuiltInTypes.h"
 #include "Project.h"
+#include "Logger.h"
 #include "RedyParser.h"
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
@@ -45,6 +46,7 @@ void main() {
 	try {
 		RedyParser parser;
 		Project project;
+		Logger::RedyProject = &project;
 		RedyModule fibModule = parser.Parse(&project, R"(
 			mod Fib;
 
@@ -55,7 +57,7 @@ void main() {
 
 				return fib(n - 1.0) + fib(n - 2.0);
 			}
-		)");
+		)", "fib.redy");
 
  		RedyModule module = parser.Parse(&project, R"(
 mod main;
@@ -72,7 +74,7 @@ pub struct TestStruct {
 	f64 main() {
 		return fib(30.0);
 	}
-})");
+})", "main.redy");
 
 		project.AddModule(std::move(fibModule));
 		project.AddModule(std::move(module));

@@ -2,15 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <functional>
-
-struct TextPos {
-    int LineX;
-    int LineY;
-    int Pos;
-
-    TextPos(int lineX, int lineY, int pos) : LineX(lineX), LineY(lineY), Pos(pos) {}
-    TextPos() : LineX(0), LineY(0), Pos(0) {}
-};
+#include "TextPos.h"
+#include "NodeAST.h"
 
 template<class T> struct Token
 {
@@ -77,9 +70,12 @@ public:
 
 
     // returns the current token.
-    inline Token<T> Current() const
-    {
+    inline Token<T> Current() const {
         return m_token;
+    }
+
+    NodeAST Node() {
+        return NodeAST(m_token.Start, m_token.End);
     }
 
     Token<T> Consume()

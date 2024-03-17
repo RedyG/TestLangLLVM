@@ -1,7 +1,6 @@
 #pragma once
 #include "VisibilityAST.h"
 #include "TypeAST.h"
-#include "VariableDeclStatement.h"
 #include "ParamAST.h"
 namespace llvm {
 	class Module;
@@ -9,11 +8,13 @@ namespace llvm {
 
 class ProtoAST {
 public:
-	VisibilityAST Visibility;
+	NodeAST Node;
+	VisibilityNodeAST Visibility;
 	TypeAST Type;
 	std::string_view Name;
+	std::string_view File;
 	std::vector<ParamAST> Params;
 
-	ProtoAST(VisibilityAST visibility, TypeAST type, std::string_view name, std::vector<ParamAST> params)
-		: Visibility(visibility), Type(type), Name(name), Params(std::move(params)) {}
+	ProtoAST(VisibilityNodeAST visibility, TypeAST type, std::string_view name, std::vector<ParamAST> params, std::string_view file, NodeAST node)
+		: Visibility(visibility), Type(type), Name(name), Params(std::move(params)), File(file), Node(node) {}
 };

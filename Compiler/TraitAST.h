@@ -10,6 +10,6 @@ public:
 
 	void GenLLVMType(llvm::LLVMContext& context, RedyModule& module) override;
 
-	TraitAST(std::unordered_map<std::string_view, ProtoAST> requiredProtos, VisibilityAST visibility, std::string_view name, std::unordered_map<std::string_view, FuncAST> methods)
-		: TypeDeclAST(visibility, name, std::move(methods)), RequiredProtos(std::move(requiredProtos)) {}
+	TraitAST(std::unordered_map<std::string_view, ProtoAST> requiredProtos, VisibilityNodeAST visibility, std::string_view name, std::unordered_map<std::string_view, FuncAST> methods, std::string_view file, NodeAST node)
+		: TypeDeclAST(visibility, name, std::move(methods), file, node), RequiredProtos(std::move(requiredProtos)) {}
 };

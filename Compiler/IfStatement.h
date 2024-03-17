@@ -10,8 +10,8 @@ public:
 
 	void CodeGenStatement(CodeGenCtx ctx) override;
 
-	IfStatement(ExprPtr condition, BlockStatement thenBlock, StatementPtr elseBlock = nullptr)
-		: Condition(std::move(condition)), ThenBlock(std::move(thenBlock)), ElseBlock(std::move(elseBlock)) {}
+	IfStatement(ExprPtr condition, BlockStatement thenBlock, NodeAST node, StatementPtr elseBlock = nullptr)
+		: Condition(std::move(condition)), ThenBlock(std::move(thenBlock)), ElseBlock(std::move(elseBlock)), StatementAST(node) {}
 private:
-	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
+	void TypeCheckStatement(TypeCheckCtx ctx) override;
 };

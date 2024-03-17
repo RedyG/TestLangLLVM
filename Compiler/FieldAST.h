@@ -3,11 +3,12 @@
 #include "VariableAST.h"
 
 // TODO: add other visiblites like pub(get) and pub(set)
-class FieldAST {
+class FieldAST{
 public:
-	VisibilityAST Visibility;
+	NodeAST Node;
+	VisibilityNodeAST Visibility;
 	VariableAST Variable;
 
-	FieldAST(VisibilityAST visibility, VariableAST variable)
-		: Visibility(visibility), Variable(std::move(variable)) {}
+	FieldAST(VisibilityNodeAST visibility, VariableAST variable, NodeAST node)
+		: Visibility(visibility), Variable(std::move(variable)), Node(node) {}
 };

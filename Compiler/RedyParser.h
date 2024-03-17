@@ -5,12 +5,13 @@
 
 class RedyParser {
 public:
-	RedyModule Parse(Project* project, std::string_view input);
+	RedyModule ParseFile(Project* project, std::string file);
+	RedyModule Parse(Project* project, std::string input, std::string file);
 
-	RedyParser() : m_lexer(CreateRedyLexer("")) {}
+	RedyParser() : m_lexer(CreateRedyLexer("")), m_file("") {}
 private:
-	ExprPtr ParseInt();
-	ExprPtr ParseDouble();
+	ExprPtr ParseInt(NodeAST node);
+	ExprPtr ParseDouble(NodeAST node);
 	ExprPtr ParsePrimary();
 	ExprPtr ParseArgs(ExprPtr expr);
 	ExprPtr ParsePostfix(ExprPtr expr);
@@ -21,13 +22,14 @@ private:
 	StatementPtr ParseStatement();
 	std::optional<TypeAST> ParseType();
 	TypeAST ParseTypeUnwrap();
-	VisibilityAST ParseVisibility();
+	VisibilityNodeAST ParseVisibility();
 	std::vector<ParamAST> ParseParams();
 	RedyModule ParseDecls(Project* project);
 	UseDeclAST ParseUseDecl();
-	StructAST ParseStruct(VisibilityAST visibility);
-	TraitAST ParseTrait(VisibilityAST visibility);
+	StructAST ParseStruct(VisibilityNodeAST visibility);
+	TraitAST ParseTrait(VisibilityNodeAST visibility);
 	std::variant<FuncAST, FieldAST, ProtoAST> ParseMember();
 
+	std::string_view m_file;
 	RedyLexer m_lexer;
 };   

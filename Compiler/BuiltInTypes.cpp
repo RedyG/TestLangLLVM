@@ -12,11 +12,11 @@ namespace BuiltInTypes {
 
 
 	void Init(LLVMContext& context) {
-		F64Decl = new StructAST({}, VisibilityAST::Public, "f64", {});
+		F64Decl = new StructAST({}, VisibilityNodeAST(VisibilityAST::Public, NodeAST()), "f64", {}, "std.redy", NodeAST());
 		F64Decl->LLVMType = Type::getDoubleTy(context);
-		BoolDecl = new StructAST({}, VisibilityAST::Public, "bool",{});
+		BoolDecl = new StructAST({}, VisibilityNodeAST(VisibilityAST::Public, NodeAST()), "bool",{}, "std.redy", NodeAST());
 		BoolDecl->LLVMType = Type::getInt1Ty(context);
-		I32Decl = new StructAST({}, VisibilityAST::Public, "i32", {});
+		I32Decl = new StructAST({}, VisibilityNodeAST(VisibilityAST::Public, NodeAST()), "i32", {}, "std.redy", NodeAST());
 		I32Decl->LLVMType = Type::getInt32Ty(context);
 	}
 

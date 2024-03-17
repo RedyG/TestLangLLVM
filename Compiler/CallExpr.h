@@ -10,9 +10,9 @@ public:
 
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
-	CallExpr(ExprPtr callee, std::vector<ExprPtr> params)
-		: Callee(std::move(callee)), Params(std::move(params)) {}
+	CallExpr(ExprPtr callee, std::vector<ExprPtr> params, NodeAST node)
+		: Callee(std::move(callee)), Params(std::move(params)), ExprAST(node) {}
 
 private:
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };

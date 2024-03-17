@@ -3,3 +3,5 @@
 bool StatementAST::IsBranch() {
 	return false;
 }
+
+StatementAST::StatementAST(NodeAST node) : Node(node) {}

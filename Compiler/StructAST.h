@@ -11,5 +11,5 @@ public:
 
 	void GenLLVMType(llvm::LLVMContext& context, RedyModule& module) override;
 
-	StructAST(std::vector<FieldAST> fields, VisibilityAST visibility, std::string_view name, std::unordered_map<std::string_view, FuncAST> methods) : TypeDeclAST(visibility, name, std::move(methods)) {}
+	StructAST(std::vector<FieldAST> fields, VisibilityNodeAST visibility, std::string_view name, std::unordered_map<std::string_view, FuncAST> methods, std::string_view file, NodeAST node) : TypeDeclAST(visibility, name, std::move(methods), file, node) {}
 };

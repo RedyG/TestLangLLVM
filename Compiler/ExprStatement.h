@@ -7,5 +7,5 @@ class ExprStatement : StatementAST {
 public:
 	ExprPtr Expr;
 
-	ExprStatement(ExprPtr expr) : Expr(std::move(expr)) {}
+	ExprStatement(ExprPtr expr, NodeAST node) : Expr(std::move(expr)), StatementAST(node) {}
 };

@@ -36,7 +36,7 @@ TypeDeclAST* RedyModule::GetPubType(TypeAST typeAST, LLVMContext& context, bool 
 			Logger::Error(std::format("The type {0} doesn't exist.", (std::string_view)typeAST));
 		return nullptr;
 	}
-	if (type->second->Visibility != VisibilityAST::Public) {
+	if (type->second->Visibility.Value != VisibilityAST::Public) {
 		if (error)
 			Logger::Error(std::format("The type \"{}\" is private.", (std::string_view)typeAST));
 		return nullptr;
@@ -79,7 +79,7 @@ FuncAST* RedyModule::GetPubFunc(std::string_view name, bool error) {
 			Logger::Error(std::format("The function \"{}\" does not exist.", name));
 		return nullptr;
 	}
-	if (func->second.Proto.Visibility != VisibilityAST::Public) {
+	if (func->second.Proto.Visibility.Value != VisibilityAST::Public) {
 		if (error)
 			Logger::Error(std::format("The function \"{}\" is private.", name));
 		return nullptr;

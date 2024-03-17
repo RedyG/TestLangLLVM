@@ -12,9 +12,9 @@ public:
 	std::string_view Name;
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
-	VariableExpr(std::string_view name) : Name(name) {}
+	VariableExpr(std::string_view name, NodeAST node) : Name(name), ExprAST(node) {}
 
 private:
 
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };

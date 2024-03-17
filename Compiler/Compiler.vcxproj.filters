@@ -65,6 +65,9 @@
     <ClCompile Include="Project.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TypeCheckCtx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lexer.h">
@@ -179,6 +182,15 @@
       <Filter>AST</Filter>
     </ClInclude>
     <ClInclude Include="TraitAST.h">
+      <Filter>AST</Filter>
+    </ClInclude>
+    <ClInclude Include="TextPos.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeCheckCtx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NodeAST.h">
       <Filter>AST</Filter>
     </ClInclude>
   </ItemGroup>

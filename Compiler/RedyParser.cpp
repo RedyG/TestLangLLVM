@@ -4,6 +4,9 @@
 #include <string>
 #include "Logger.h"
 #include "TypeDeclAST.h"
+#include <fstream>
+#include <sstream>
+#include "Project.h"
 
 template<typename T, typename S>
 std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
@@ -13,17 +16,6 @@ std::unique_ptr<T> dynamic_pointer_cast(std::unique_ptr<S>&& p) noexcept
 		p.release();            // no longer owns the pointer
 	}
 	return converted;
-}
-
-std::string EraseChar(std::string_view str, char c) {
-	std::string result;
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		char currentChar = str[i];
-		if (currentChar != c)
-			result += currentChar;
-	}
-	return std::move(result);
 }
 
 struct RedyOperator {
@@ -53,51 +45,57 @@ std::optional<RedyOperator> GetOperator(TokenType type) {
 	return it == operators.end() ? std::nullopt : std::make_optional(it->second);
 }	
 
-ExprPtr RedyParser::ParseInt() {
+std::string EraseChar(std::string_view str, char c) {
+	std::string result;
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		char currentChar = str[i];
+		if (currentChar != c)
+			result += currentChar;
+	}
+	return std::move(result);
+}
+
+ExprPtr RedyParser::ParseInt(NodeAST node) {
 	auto content = m_lexer.Current().Content;
 	m_lexer.Consume();
 	if (content.contains('_')) {
-		return std::make_unique<IntExpr>(std::stoi(EraseChar(content, '_')));
+		return std::make_unique<IntExpr>(std::stoi(EraseChar(content, '_')), node);
 	}
 
-	return std::make_unique<IntExpr>(std::stoi(std::string(content)));
+	return std::make_unique<IntExpr>(std::stoi(std::string(content)), node);
 }
 
 
-ExprPtr RedyParser::ParseDouble() {
+ExprPtr RedyParser::ParseDouble(NodeAST node) {
 	auto content = m_lexer.Current().Content;
 	m_lexer.Consume();
 	if (content.contains('_')) {
-		return std::make_unique<FloatExpr>(std::stod(EraseChar(content, '_')));
+		return std::make_unique<FloatExpr>(std::stod(EraseChar(content, '_')), node);
 	}
-	return std::make_unique<FloatExpr>(std::stod(std::string(content)));
+	return std::make_unique<FloatExpr>(std::stod(std::string(content)), node);
 }
 
 // This method might return nullptr
 ExprPtr RedyParser::ParsePrimary() {
+	auto node = m_lexer.Node();
 	if (m_lexer.Current().Type == TokenType::Float) {
-		return std::move(ParseDouble());
-	}
-	else if (m_lexer.Current().Type == TokenType::Identifier)
-	{
+		return std::move(ParseDouble(node));
+	} else if (m_lexer.Current().Type == TokenType::Identifier) {
 		auto name = m_lexer.Current().Content;
 		m_lexer.Consume();
-		return std::make_unique<VariableExpr>(name);
-	}
-	else if (m_lexer.ConsumeIf(TokenType::LParen)) {
+		return std::make_unique<VariableExpr>(name, node);
+	} else if (m_lexer.ConsumeIf(TokenType::LParen)) {
 		auto expr = ParseExpr();
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
 			return std::move(expr);
 		}
-	}
-	else if (m_lexer.Current().Type == TokenType::Int) {
-		return std::move(ParseInt());
-	}
-	else if (m_lexer.ConsumeIf(TokenType::True)) {
-		return std::make_unique<BoolExpr>(true);
-	}
-	else if (m_lexer.ConsumeIf(TokenType::False)) {
-		return std::make_unique<BoolExpr>(false);
+	} else if (m_lexer.Current().Type == TokenType::Int) {
+		return std::move(ParseInt(node));
+	} else if (m_lexer.ConsumeIf(TokenType::True)) {
+		return std::make_unique<BoolExpr>(true, node);
+	} else if (m_lexer.ConsumeIf(TokenType::False)) {
+		return std::make_unique<BoolExpr>(false, node);
 	}
 	
 	return nullptr;
@@ -107,16 +105,17 @@ ExprPtr RedyParser::ParseArgs(ExprPtr expr) {
 	m_lexer.Consume();
 	std::vector<ExprPtr> params {};
 
+	auto endNode = m_lexer.Node();
 	if (m_lexer.ConsumeIf(TokenType::RParen)){
-		auto res = std::make_unique<CallExpr>(std::move(expr), std::move(params));
-		return res;
+		return std::make_unique<CallExpr>(std::move(expr), std::move(params), NodeAST(expr->Node.Start, endNode.End));
 	}
 
 	do {
 		params.push_back(std::move(ParseExpr()));
 
+		endNode = m_lexer.Node();
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
-			return std::make_unique<CallExpr>(std::move(expr), std::move(params));
+			return std::make_unique<CallExpr>(std::move(expr), std::move(params), NodeAST(expr->Node.Start, endNode.End));
 		}
 	} while (m_lexer.ConsumeIf(TokenType::Comma));
 
@@ -125,7 +124,7 @@ ExprPtr RedyParser::ParseArgs(ExprPtr expr) {
 
 ExprPtr RedyParser::ParsePostfix(ExprPtr expr) {
 	if (m_lexer.Current().Type == TokenType::LParen) {
-		return std::move(ParsePostfix(std::move(ParseArgs(std::move(expr)))));
+		return std::move(ParsePostfix(std::move(ParseArgs(std::move(expr))))); // sorry bjarne
 	}
 
 	return std::move(expr);
@@ -138,9 +137,10 @@ ExprPtr RedyParser::ParsePostfix() {
 ExprPtr RedyParser::ParseUnary() {
 	if (IsUnary(m_lexer.Current().Type)) {
 		auto type = m_lexer.Current().Type;
+		auto start = m_lexer.Node().Start;
 		m_lexer.Consume();
 		auto expr = ParsePostfix();
-		return std::make_unique<UnaryExpr>(type, std::move(expr));
+		return std::make_unique<UnaryExpr>(type, std::move(expr), NodeAST(start, expr->Node.End));
 	}
 
 	return std::move(ParsePostfix());
@@ -150,21 +150,25 @@ constexpr int StatementPrecendence = -1;
 
 std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precedence) {
 	if (precedence == StatementPrecendence) {
+		auto start = m_lexer.Node().Start;
 		if (m_lexer.ConsumeIf(TokenType::LCurly)) {
 			std::vector<StatementPtr> statements;
 			while (m_lexer.Current().Type != TokenType::RCurly) {
 				statements.push_back(std::move(ParseStatement()));
 			}
+			auto end = m_lexer.Node().End;
 			m_lexer.Consume();
-			return std::make_unique<BlockStatement>(std::move(statements));
+			return std::make_unique<BlockStatement>(std::move(statements), NodeAST(start, end));
 		}
 
 
 		if (m_lexer.ConsumeIf(TokenType::Return)) {
 			auto expr = ParseExpr();
+			auto end = m_lexer.Node().End;
 			if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-				return std::make_unique<ReturnStatement>(std::move(expr));
+				return std::make_unique<ReturnStatement>(std::move(expr), NodeAST(start, end));
 			}
+
 		}
 
 		if (m_lexer.ConsumeIf(TokenType::If)) {
@@ -173,9 +177,9 @@ std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precede
 			auto thenBlock = std::move(*dynamic_cast<BlockStatement*>(thenStatement.get()));
 			if (m_lexer.ConsumeIf(TokenType::Else)) {
 				auto elseBlock = std::move(ParseStatement());
-				return std::make_unique<IfStatement>(std::move(cond), std::move(thenBlock), std::move(elseBlock));
+				return std::make_unique<IfStatement>(std::move(cond), std::move(thenBlock), NodeAST(start, elseBlock->Node.End), std::move(elseBlock));
 			}
-			return std::make_unique<IfStatement>(std::move(cond), std::move(thenBlock));
+			return std::make_unique<IfStatement>(std::move(cond), std::move(thenBlock), NodeAST(start, thenBlock.Node.End));
 		}
 
 		if (auto type = ParseType()) {
@@ -184,8 +188,10 @@ std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precede
 				m_lexer.Consume();
 				if (m_lexer.ConsumeIf(TokenType::Equal)) {
 					auto expr = ParseExpr();
+					auto end = m_lexer.Node().End;
 					if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-						return std::make_unique<VariableDeclStatement>(std::move(VariableAST(type.value(), name, std::move(expr))));
+						auto node = NodeAST(start, end);
+						return std::make_unique<VariableDeclStatement>(std::move(VariableAST(type.value(), name, node, std::move(expr))), node);
 					}
 				}
 			}
@@ -194,15 +200,18 @@ std::variant<ExprPtr, StatementPtr> RedyParser::ParseExprOrStatement(int precede
 
 
 	auto expr = ParseUnary();
+	auto start = expr->Node.Start;
 	while (true) {
 		auto op = GetOperator(m_lexer.Current().Type);
 		if (!op || op.value().Precedence < precedence)
 			break;
 		auto type = m_lexer.Current().Type;
 		m_lexer.Consume();
+		auto rExpr = ParseExpr(op.value().Precedence + (int)op.value().LeftAssociative);
+		auto end  = rExpr->Node.End;
 		expr = std::make_unique<BinOpExpr>(
 			std::move(expr), type,
-			std::move(ParseExpr(op.value().Precedence + (int)op.value().LeftAssociative))
+			std::move(rExpr), NodeAST(start, end)
 		);
 	}
 	return expr;
@@ -219,8 +228,9 @@ StatementPtr RedyParser::ParseStatement() {
 std::optional<TypeAST> RedyParser::ParseType() {
 	if (m_lexer.Current().Type == TokenType::Identifier) {
 		auto name = m_lexer.Current().Content;
+		auto node = m_lexer.Node();
 		m_lexer.Consume();
-		return std::make_optional(TypeAST(name));
+		return std::make_optional(TypeAST(name, node));
 	}
 
 	return std::nullopt;
@@ -234,11 +244,12 @@ TypeAST RedyParser::ParseTypeUnwrap() {
 	throw std::exception("invalid type parsing");
 }
 
-VisibilityAST RedyParser::ParseVisibility() {
+VisibilityNodeAST RedyParser::ParseVisibility() {
+	auto node = m_lexer.Node();
 	if (m_lexer.ConsumeIf(TokenType::Pub)) {
-		return VisibilityAST::Public;
+		return VisibilityNodeAST(VisibilityAST::Public, node);
 	}
-	return VisibilityAST::Private;
+	return VisibilityNodeAST(VisibilityAST::Public, node);
 }
 
 std::vector<ParamAST> RedyParser::ParseParams() {
@@ -251,9 +262,10 @@ std::vector<ParamAST> RedyParser::ParseParams() {
 	do {
 		auto type = ParseTypeUnwrap();
 		if (m_lexer.Current().Type == TokenType::Identifier) {
+			auto end = m_lexer.Node().End;
 			auto name = m_lexer.Current().Content;
 			m_lexer.Consume();
-			params.emplace_back(std::move(SymbolAST(VariableAST(type, name))));
+			params.emplace_back(std::move(SymbolAST(VariableAST(type, name, NodeAST(type.Node.Start, end)))));
 		}
 		
 		if (m_lexer.ConsumeIf(TokenType::RParen)) {
@@ -267,49 +279,64 @@ std::vector<ParamAST> RedyParser::ParseParams() {
 std::variant<FuncAST, FieldAST, ProtoAST> RedyParser::ParseMember() {
 	auto visibility = ParseVisibility();
 	auto type = ParseTypeUnwrap();
+
 	if (m_lexer.Current().Type == TokenType::Identifier) {
 		auto name = m_lexer.Current().Content;
 		m_lexer.Consume();
+
+		auto posAfterIdentifier = m_lexer.Node().End;
 		if (m_lexer.ConsumeIf(TokenType::LParen)) {
+
 			auto params = ParseParams();
-			auto proto = ProtoAST(visibility, type, name, std::move(params));
+			auto end = m_lexer.Node().End;
+			auto proto = ProtoAST(visibility, type, name, std::move(params), m_file, NodeAST(visibility.Node.Start, end));
+
 			if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
 				return proto;
 			}
 			else {
+				proto.Node.End = posAfterIdentifier;
 				if (m_lexer.ConsumeIf(TokenType::Arrow)) {
 					auto body = ParseExpr();
+					end = m_lexer.Node().End;
 					if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-						return std::move(FuncAST(std::move(proto), std::move(body)));
+						return std::move(FuncAST(std::move(proto), std::move(body), NodeAST(proto.Node.Start, end)));
 					}
 				}
 				else {
 					auto statement = ParseStatement();
 					auto block = dynamic_pointer_cast<BlockStatement, StatementAST>(std::move(statement));
 					if (block) {
-						return std::move(FuncAST(std::move(proto), std::move(block)));
+						return std::move(FuncAST(std::move(proto), std::move(block), NodeAST(proto.Node.Start, block->Node.End)));
 					}
 				}
 			}
 		}
 		else if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-			return std::move(FieldAST(visibility, VariableAST(type, name)));
+			return std::move(FieldAST(visibility, VariableAST(type, name, NodeAST(type.Node.Start, posAfterIdentifier)), NodeAST(visibility.Node.Start, posAfterIdentifier)));
 		}
 	}
 }
 
 UseDeclAST RedyParser::ParseUseDecl() {
-	UseDeclAST use;
+	auto start = m_lexer.Node().Start;
+	m_lexer.Consume();
+
+	std::vector<std::string_view> path;
+	std::vector<std::string_view> imports;
 	do {
 		if (m_lexer.ConsumeIf(TokenType::LCurly)) {
 			do {
 				if (m_lexer.Current().Type == TokenType::Identifier) {
-					use.Imports.push_back(m_lexer.Current().Content);
+					imports.push_back(m_lexer.Current().Content);
 					m_lexer.Consume();
 				}
 
-				if (m_lexer.ConsumeIf(TokenType::RCurly) && m_lexer.ConsumeIf(TokenType::SemiColon))
-					return use;
+				if (m_lexer.ConsumeIf(TokenType::RCurly) && m_lexer.Current().Type == TokenType::SemiColon) {
+					auto end = m_lexer.Node().End;
+					m_lexer.Consume();
+					return UseDeclAST(std::move(path), std::move(imports), NodeAST(start, end));
+				}
 
 			} while (m_lexer.ConsumeIf(TokenType::Comma));
 		}
@@ -319,21 +346,23 @@ UseDeclAST RedyParser::ParseUseDecl() {
 			content = m_lexer.Current().Content;
 			m_lexer.Consume();
 		}
+		
+		if (m_lexer.Current().Type == TokenType::SemiColon) {
+			auto end = m_lexer.Node().End;
+			m_lexer.Consume();
 
-		if (m_lexer.ConsumeIf(TokenType::SemiColon)) {
-			use.Imports.push_back(content);
-			return use;
+			imports.push_back(content);
+			return UseDeclAST(std::move(path), std::move(imports), NodeAST(start, end));
 		}
 
-		use.Path.push_back(content);
+		path.push_back(content);
 	} while (m_lexer.ConsumeIf(TokenType::Colon));
 }
-
 RedyModule RedyParser::ParseDecls(Project* project) {
 	std::string_view name;
 	std::vector<UseDeclAST> uses;
 	while (true) {
-		if (m_lexer.ConsumeIf(TokenType::Use)) {
+		if (m_lexer.Current().Type == TokenType::Use) {
 			uses.push_back(ParseUseDecl());
 			continue;
 		}
@@ -360,7 +389,8 @@ RedyModule RedyParser::ParseDecls(Project* project) {
 	return RedyModule(name, std::move(uses), project);
 }
 
-TraitAST RedyParser::ParseTrait(VisibilityAST visibility) {
+TraitAST RedyParser::ParseTrait(VisibilityNodeAST visibility) {
+	auto start = m_lexer.Node().Start;
 	m_lexer.Consume();
 
 	if (m_lexer.Current().Type == TokenType::Identifier) {
@@ -385,14 +415,15 @@ TraitAST RedyParser::ParseTrait(VisibilityAST visibility) {
 					methods.emplace(func.Proto.Name, std::move(func));
 				}
 			}
-
+			auto end = m_lexer.Node().End;
 			m_lexer.Consume();
-			return TraitAST(std::move(protos), visibility, name, std::move(methods));
+			return TraitAST(std::move(protos), visibility, name, std::move(methods), m_file, NodeAST(start, end));
 		}
 	}
 }
 
-StructAST RedyParser::ParseStruct(VisibilityAST visibility) {
+StructAST RedyParser::ParseStruct(VisibilityNodeAST visibility) {
+	auto start = m_lexer.Node().Start;
 	m_lexer.Consume();
 
 	if (m_lexer.Current().Type == TokenType::Identifier) {
@@ -417,16 +448,20 @@ StructAST RedyParser::ParseStruct(VisibilityAST visibility) {
 
 			}
 
+			auto end = m_lexer.Node().End;
 			m_lexer.Consume();
-			return StructAST(std::move(fields), visibility, name, std::move(methods));
+			return StructAST(std::move(fields), visibility, name, std::move(methods), m_file, NodeAST(start, end));
 		}
 	}
 	
 	throw std::exception("invalid type definition");
 }
 
-RedyModule RedyParser::Parse(Project* project, std::string_view input) {
-	m_lexer = CreateRedyLexer(input);
+RedyModule RedyParser::Parse(Project* project, std::string input, std::string file) {
+	project->InputFiles.emplace(file, std::move(input));
+	auto inputFile = project->InputFiles.find(file);
+	m_file = inputFile->first;
+	m_lexer = CreateRedyLexer(inputFile->second);
 	m_lexer.Consume();
 
 	auto module = ParseDecls(project);
@@ -454,6 +489,14 @@ RedyModule RedyParser::Parse(Project* project, std::string_view input) {
 	} while (m_lexer.Current().Type != TokenType::Invalid);
 
 	return module;
+}
+
+RedyModule RedyParser::ParseFile(Project* project, std::string file) {
+	std::ifstream t(file);
+	std::stringstream buffer;
+	buffer << t.rdbuf();
+
+	return Parse(project, std::move(buffer.str()), std::move(file));
 }
 
 /*

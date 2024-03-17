@@ -7,9 +7,9 @@ class ReturnStatement : public StatementAST {
 public:
 	ExprPtr Expr;
 
-	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
+	void TypeCheckStatement(TypeCheckCtx ctx) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 	bool IsBranch() override;
 
-	ReturnStatement(ExprPtr expr);
+	ReturnStatement(ExprPtr expr, NodeAST node);
 };

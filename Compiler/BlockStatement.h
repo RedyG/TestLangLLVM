@@ -7,11 +7,11 @@ class BlockStatement : public StatementAST {
 public:
 	std::vector<StatementPtr> Statements;
 
-	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
+	void TypeCheckStatement(TypeCheckCtx ctx) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 	void CodeGenWithParams(CodeGenCtx ctx, std::vector<ParamAST>& params);
 	llvm::BasicBlock* CodeGen(CodeGenCtx ctx, std::string_view name);
 
-	BlockStatement(std::vector<StatementPtr> statements) : Statements(std::move(statements)) {}
+	BlockStatement(std::vector<StatementPtr> statements, NodeAST node) : Statements(std::move(statements)), StatementAST(node) {}
 };
 

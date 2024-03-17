@@ -11,8 +11,8 @@ public:
 
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
-	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)) {}
+	BinOpExpr(ExprPtr lhs, TokenType op, ExprPtr rhs, NodeAST node) : LHS(std::move(lhs)), Op(op), RHS(std::move(rhs)), ExprAST(node) {}
 
 private:
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };

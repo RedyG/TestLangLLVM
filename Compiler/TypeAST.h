@@ -1,12 +1,15 @@
 #pragma once
 #include <string>
+#include "NodeAST.h"
 
 
 class TypeAST {
 public:
+	NodeAST Node;
 	std::string_view Name;
 
-	TypeAST(std::string_view name) : Name(name) {}
+	TypeAST(std::string_view name) : Name(name), Node(NodeAST()) {}
+	TypeAST(std::string_view name, NodeAST node) : Name(name), Node(node) {}
 
 
 	bool operator == (const TypeAST& other) const {

@@ -5,4 +5,4 @@ bool ReturnStatement::IsBranch() {
 	return true;
 }
 
-ReturnStatement::ReturnStatement(ExprPtr expr) : Expr(std::move(expr)) {}
+ReturnStatement::ReturnStatement(ExprPtr expr, NodeAST node) : Expr(std::move(expr)), StatementAST(node) {}

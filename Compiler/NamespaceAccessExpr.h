@@ -9,5 +9,5 @@ public:
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
 private:
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };

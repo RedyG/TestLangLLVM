@@ -10,8 +10,8 @@ class VariableDeclStatement : public StatementAST {
 public:
 	SymbolAST Symbol;
 
-	void TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) override;
+	void TypeCheckStatement(TypeCheckCtx ctx) override;
 	void CodeGenStatement(CodeGenCtx ctx) override;
 
-	VariableDeclStatement(SymbolAST symbol) : Symbol(std::move(symbol)) {}
+	VariableDeclStatement(SymbolAST symbol, NodeAST node) : Symbol(std::move(symbol)), StatementAST(node)  {}
 };

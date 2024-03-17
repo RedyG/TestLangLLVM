@@ -23,16 +23,16 @@ SymbolAST* FindSymbol(std::string_view name) {
 	return nullptr;
 }
 
-TypeDeclAST* BoolExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
+TypeDeclAST* BoolExpr::OnTypeCheck(TypeCheckCtx ctx) {
 	return BuiltInTypes::BoolDecl;
 }
 
 
-TypeDeclAST* IntExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
+TypeDeclAST* IntExpr::OnTypeCheck(TypeCheckCtx ctx) {
 	return BuiltInTypes::I32Decl;
 }
 
-TypeDeclAST* FloatExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
+TypeDeclAST* FloatExpr::OnTypeCheck(TypeCheckCtx ctx) {
 	return BuiltInTypes::F64Decl;
 }
 
@@ -45,9 +45,9 @@ std::string_view GetOpName(TokenType op) {
 	}
 }
 
-TypeDeclAST* BinOpExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	auto lhs = LHS->TypeCheck(module, context);
-	auto rhs = RHS->TypeCheck(module, context);
+TypeDeclAST* BinOpExpr::OnTypeCheck(TypeCheckCtx ctx) {
+	auto lhs = LHS->TypeCheck(ctx);
+	auto rhs = RHS->TypeCheck(ctx);
 
 
 	// temporary:
@@ -66,34 +66,36 @@ TypeDeclAST* BinOpExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& conte
 	return lhs;
 }
 
-TypeDeclAST* VariableExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
+TypeDeclAST* VariableExpr::OnTypeCheck(TypeCheckCtx ctx) {
 	Symbol = FindSymbol(Name);
 	if (Symbol == nullptr) {
 		Logger::Error(std::format("Tried to use undeclared variable {0}", Name));
 		return nullptr;
 	}
-	return module.GetType(Symbol->Variable.Type, context);
+	return ctx.RedyMod.GetType(Symbol->Variable.Type, ctx.LLVMCtx);
 }
 
-TypeDeclAST* CallExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	auto func = module.GetFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
+TypeDeclAST* CallExpr::OnTypeCheck(TypeCheckCtx ctx) {
+	Logger::Warning("The field `test` is cool");
+	Logger::Error(Log("Mismatched types", ctx.File, UnderlinedText("Here", TextPos(1, 2, 2), TextPos(2, 2, 3)), {}));
+	auto func = ctx.RedyMod.GetFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
 	for (auto& param : Params) {
-		param->TypeCheck(module, context);
+		param->TypeCheck(ctx);
 		// todo
 	}
-	return module.GetType(func->Proto.Type, context);
+	return ctx.RedyMod.GetType(func->Proto.Type, ctx.LLVMCtx);
 }
 
-TypeDeclAST* UnaryExpr::OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	auto type = Expr->TypeCheck(module, context);
+TypeDeclAST* UnaryExpr::OnTypeCheck(TypeCheckCtx ctx) {
+	auto type = Expr->TypeCheck(ctx);
 	if (type != BuiltInTypes::BoolDecl) {
 		Logger::Error(std::format("Operator ! expected operand of type bool and got type {0}", type->Name));
 	}
 	return type;
 }
 
-void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
-	ReturnType = module.GetType(Proto.Type, context);
+void FuncAST::TypeCheck(TypeCheckCtx ctx) {
+	ReturnType = ctx.RedyMod.GetType(Proto.Type, ctx.LLVMCtx);
 
 	for (auto& param : Proto.Params) {
 		symbols.push_back(&param.Symbol);
@@ -101,7 +103,7 @@ void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 
 	if (std::holds_alternative<ExprPtr>(Body)) {
 		auto& expr = std::get<ExprPtr>(Body);
-		auto bodyType = expr->TypeCheck(module, context);
+		auto bodyType = expr->TypeCheck(ctx);
 
 		if (bodyType == nullptr)
 			return;
@@ -110,7 +112,7 @@ void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, bodyType->Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
-		block->TypeCheckStatement(module, context);
+		block->TypeCheckStatement(ctx);
 	}
 
 	symbols.resize(symbols.size() - Proto.Params.size());
@@ -120,45 +122,45 @@ void FuncAST::TypeCheck(RedyModule& module, llvm::LLVMContext& context) {
 void RedyModule::TypeCheck(llvm::LLVMContext& context) {
 	for (auto& typeEntry : m_typeDecls) {
 		for (auto& methodEntry : typeEntry.second->Methods) {
-			methodEntry.second.TypeCheck(*this, context);
+			methodEntry.second.TypeCheck(TypeCheckCtx(*this, context, methodEntry.second.Proto.File));
 		}
 	}
 
 	for (auto& funcEntry : m_funcs) {
-		funcEntry.second.TypeCheck(*this, context);
+		funcEntry.second.TypeCheck(TypeCheckCtx(*this, context, funcEntry.second.Proto.File));
 	}
 }
 
-void VariableDeclStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
+void VariableDeclStatement::TypeCheckStatement(TypeCheckCtx ctx) {
 	symbols.push_back(&Symbol);
 	symbolsCount.top()++;
 }
 
-void IfStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
-	auto condType = Condition->TypeCheck(module, context);
+void IfStatement::TypeCheckStatement(TypeCheckCtx ctx) {
+	auto condType = Condition->TypeCheck(ctx);
 	if (condType != BuiltInTypes::BoolDecl) {
 		Logger::Error("The condition of an if statement must be of type bool");
 		return;
 	}
-	ThenBlock.TypeCheckStatement(module, context);
+	ThenBlock.TypeCheckStatement(ctx);
 	if (ElseBlock) {
-		ElseBlock->TypeCheckStatement(module, context);
+		ElseBlock->TypeCheckStatement(ctx);
 	}
 }
 
-void BlockStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
+void BlockStatement::TypeCheckStatement(TypeCheckCtx ctx) {
 	symbolsCount.push(0);
 
 	for (auto& statement : Statements) {
-		statement->TypeCheckStatement(module, context);
+		statement->TypeCheckStatement(ctx);
 	}
 
 	symbols.resize(symbols.size() - symbolsCount.top());
 	symbolsCount.pop();
 }
 
-void ReturnStatement::TypeCheckStatement(RedyModule& module, llvm::LLVMContext& context) {
-	auto exprType = Expr->TypeCheck(module, context);
+void ReturnStatement::TypeCheckStatement(TypeCheckCtx ctx) {
+	auto exprType = Expr->TypeCheck(ctx);
 	if (exprType == nullptr)
 		return;
 

@@ -7,8 +7,8 @@ public:
 
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
-	IntExpr(int value) : Value(value) {}
+	IntExpr(int value, NodeAST node) : Value(value), ExprAST(node) {}
 
 private:
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };

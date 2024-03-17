@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "UseDeclAST.h"
+#include "FuncAST.h"
 class Project;
 #include "StructAST.h"
 struct CodeGenCtx;
@@ -31,16 +32,15 @@ private:
 
 	Project* m_project;
 
-	std::vector<UseDeclAST> m_useDecls;
-
 	std::unordered_map<std::string_view, RedyModule> m_children;
-
 	std::unordered_map<TypeAST, std::unique_ptr<TypeDeclAST>> m_typeDecls;
 	std::unordered_map<std::string_view, FuncAST> m_funcs;
 
-	std::unordered_map<std::string_view, FuncAST*> m_importedFuncs;
-	std::unordered_map<TypeAST, TypeDeclAST*> m_importedTypes;
+	std::vector<UseDeclAST> m_useDecls;
+
 	std::unordered_map<std::string_view, RedyModule*> m_importedModules;
+	std::unordered_map<TypeAST, TypeDeclAST*> m_importedTypes;
+	std::unordered_map<std::string_view, FuncAST*> m_importedFuncs;
 };
 
 /*

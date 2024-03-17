@@ -10,8 +10,8 @@ public:
 
 	llvm::Value* CodeGen(CodeGenCtx ctx) override;
 
-	UnaryExpr(TokenType op, ExprPtr expr) : Op(op), Expr(std::move(expr)) {}
+	UnaryExpr(TokenType op, ExprPtr expr, NodeAST node) : Op(op), Expr(std::move(expr)), ExprAST(node) {}
 
 private:
-	TypeDeclAST* OnTypeCheck(RedyModule& module, llvm::LLVMContext& context) override;
+	TypeDeclAST* OnTypeCheck(TypeCheckCtx ctx) override;
 };
