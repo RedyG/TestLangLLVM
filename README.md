@@ -1,1 +1,1 @@
-A custom programming language ( in progress )
+A custom programming language built using LLVM in c++ ( in progress )
