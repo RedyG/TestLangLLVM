@@ -11,7 +11,7 @@ void StructAST::GenLLVMType(LLVMContext& context, RedyModule& module) {
 
 	std::vector<Type*> types;
 	for (auto& field : Fields) {
-		types.push_back(module.GetType(field.Variable.Type, context)->LLVMType);
+		types.push_back(module.GetType(field.Variable.ReturnType, context)->LLVMType);
 	}
 
 	LLVMType = StructType::create(types, Name);

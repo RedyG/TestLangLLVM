@@ -6,7 +6,7 @@
 
 struct VariableAST {
 	NodeAST Node;
-	TypeAST Type;
+	TypeAST ReturnType;
 	std::string_view Name;
 	ExprPtr DefaultValue;
 

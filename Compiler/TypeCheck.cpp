@@ -10,7 +10,6 @@
 
 std::vector<SymbolAST*> symbols;
 std::stack<int> symbolsCount;
-TypeDeclAST* ReturnType = nullptr;
 
 SymbolAST* FindSymbol(std::string_view name) {
 	for (unsigned int i = symbols.size() - 1; i != -1; i--) {
@@ -72,18 +71,16 @@ TypeDeclAST* VariableExpr::OnTypeCheck(TypeCheckCtx ctx) {
 		Logger::Error(std::format("Tried to use undeclared variable {0}", Name));
 		return nullptr;
 	}
-	return ctx.RedyMod.GetType(Symbol->Variable.Type, ctx.LLVMCtx);
+	return ctx.RedyMod.GetType(Symbol->Variable.ReturnType, ctx.LLVMCtx);
 }
 
 TypeDeclAST* CallExpr::OnTypeCheck(TypeCheckCtx ctx) {
-	Logger::Warning("The field `test` is cool");
-	Logger::Error(Log("Mismatched types", ctx.File, UnderlinedText("Here", TextPos(1, 2, 2), TextPos(2, 2, 3)), {}));
 	auto func = ctx.RedyMod.GetFunc(dynamic_cast<VariableExpr*>(Callee.get())->Name);
 	for (auto& param : Params) {
 		param->TypeCheck(ctx);
 		// todo
 	}
-	return ctx.RedyMod.GetType(func->Proto.Type, ctx.LLVMCtx);
+	return ctx.RedyMod.GetType(func->Proto.ReturnType, ctx.LLVMCtx);
 }
 
 TypeDeclAST* UnaryExpr::OnTypeCheck(TypeCheckCtx ctx) {
@@ -95,7 +92,7 @@ TypeDeclAST* UnaryExpr::OnTypeCheck(TypeCheckCtx ctx) {
 }
 
 void FuncAST::TypeCheck(TypeCheckCtx ctx) {
-	ReturnType = ctx.RedyMod.GetType(Proto.Type, ctx.LLVMCtx);
+	ctx.Func.Proto.ReturnTypeDecl = ctx.RedyMod.GetType(Proto.ReturnType, ctx.LLVMCtx);
 
 	for (auto& param : Proto.Params) {
 		symbols.push_back(&param.Symbol);
@@ -108,8 +105,8 @@ void FuncAST::TypeCheck(TypeCheckCtx ctx) {
 		if (bodyType == nullptr)
 			return;
 
-		if (bodyType != ReturnType)
-			Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, bodyType->Name));
+		if (bodyType != ctx.Func.Proto.ReturnTypeDecl)
+			Logger::Error(std::format("Expected type {0} and got type {1}", "todo", bodyType->Name));
 	} else {
 		auto& block = std::get<std::unique_ptr<BlockStatement>>(Body);
 		block->TypeCheckStatement(ctx);
@@ -122,12 +119,12 @@ void FuncAST::TypeCheck(TypeCheckCtx ctx) {
 void RedyModule::TypeCheck(llvm::LLVMContext& context) {
 	for (auto& typeEntry : m_typeDecls) {
 		for (auto& methodEntry : typeEntry.second->Methods) {
-			methodEntry.second.TypeCheck(TypeCheckCtx(*this, context, methodEntry.second.Proto.File));
+			methodEntry.second.TypeCheck(TypeCheckCtx(*this, context, methodEntry.second.Proto.File, methodEntry.second));
 		}
 	}
 
 	for (auto& funcEntry : m_funcs) {
-		funcEntry.second.TypeCheck(TypeCheckCtx(*this, context, funcEntry.second.Proto.File));
+		funcEntry.second.TypeCheck(TypeCheckCtx(*this, context, funcEntry.second.Proto.File, funcEntry.second));
 	}
 }
 
@@ -164,8 +161,11 @@ void ReturnStatement::TypeCheckStatement(TypeCheckCtx ctx) {
 	if (exprType == nullptr)
 		return;
 
-	if (exprType->LLVMType != ReturnType->LLVMType)
-		Logger::Error(std::format("Expected type {0} and got type {1}", ReturnType->Name, exprType->Name));
+	if (exprType->LLVMType != ctx.Func.Proto.ReturnTypeDecl->LLVMType) {
+		Logger::Error(Log("mismatched types", ctx.File,
+			UnderlinedText(std::format("expected `{}` but found `{}`", (std::string_view)ctx.Func.Proto.ReturnType, exprType->Name), Expr->Node),
+			{UnderlinedText(std::format("expected `{}` because of return type", (std::string_view)ctx.Func.Proto.ReturnType), ctx.Func.Proto.ReturnType.Node)}));
+	}
 }
 
 void Project::TypeCheck(llvm::LLVMContext& context) {

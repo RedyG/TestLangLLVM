@@ -33,7 +33,7 @@ Value* BinOpExpr::CodeGen(CodeGenCtx ctx) {
 }
 
 Value* VariableExpr::CodeGen(CodeGenCtx ctx) {
-	return ctx.Builder.CreateLoad(ctx.RedyMod.GetType(Symbol->Variable.Type, ctx.GetLLVMCtx())->LLVMType, Symbol->Alloca);
+	return ctx.Builder.CreateLoad(ctx.RedyMod.GetType(Symbol->Variable.ReturnType, ctx.GetLLVMCtx())->LLVMType, Symbol->Alloca);
 }
 
 Value* CallExpr::CodeGen(CodeGenCtx ctx) {
@@ -85,7 +85,7 @@ void BlockStatement::CodeGenWithParams(CodeGenCtx ctx, std::vector<ParamAST>& pa
 }
 
 void VariableDeclStatement::CodeGenStatement(CodeGenCtx ctx) {
-	Symbol.Alloca = ctx.Builder.CreateAlloca(ctx.RedyMod.GetType(Symbol.Variable.Type, ctx.GetLLVMCtx())->LLVMType);
+	Symbol.Alloca = ctx.Builder.CreateAlloca(ctx.RedyMod.GetType(Symbol.Variable.ReturnType, ctx.GetLLVMCtx())->LLVMType);
 	if (Symbol.Variable.DefaultValue) {
 		auto value = Symbol.Variable.DefaultValue->CodeGen(ctx);
 		ctx.Builder.CreateStore(value, Symbol.Alloca);

@@ -6,11 +6,10 @@
 
 struct UnderlinedText {
 	std::string_view Text;
-	TextPos Start;
-	TextPos End;
+	NodeAST Node;
 
-	UnderlinedText(std::string_view text, TextPos start, TextPos end)
-		: Text(text), Start(start), End(end) {}
+	UnderlinedText(std::string_view text, NodeAST node)
+		: Text(text), Node(node) {}
 };
 
 struct Log {

@@ -63,18 +63,15 @@ void main() {
 mod main;
 use Fib:fib;
 
-trait TestTrait {
-	pub f64 next();
-	pub f64 double() => next() + next();
+f64 main() {
+	return fib(30.0);
 }
 
-pub struct TestStruct {
-	i32 Test;
+f64 will_error() {
+	return 1;
+}
 
-	f64 main() {
-		return fib(30.0);
-	}
-})", "main.redy");
+)", "main.redy");
 
 		project.AddModule(std::move(fibModule));
 		project.AddModule(std::move(module));

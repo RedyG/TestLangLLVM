@@ -8,12 +8,12 @@
 template<class T> struct Token
 {
 public:
-    T Type;
+    T ReturnType;
     std::string_view Content;
     TextPos Start;
     TextPos End;
 
-    Token(T type, std::string_view content, TextPos start, TextPos end) : Type(type), Content(content), Start(start), End(end) {}
+    Token(T type, std::string_view content, TextPos start, TextPos end) : ReturnType(type), Content(content), Start(start), End(end) {}
 };
 
 struct MatchResult
@@ -40,14 +40,14 @@ public:
 template<class T> struct TokenMatcher
 {
 public:
-    T Type;
+    T ReturnType;
 
     //TokenMatcher& operator=(TokenMatcher&&) noexcept = default;
     //TokenMatcher(TokenMatcher&&) noexcept = default;
 
     TokenMatcher(T type, std::function<MatchResult(std::string_view)> matcher)
     {
-        Type = type;
+        ReturnType = type;
         m_matcher = matcher;
     }
 
@@ -92,8 +92,9 @@ public:
             if (m_input.at(m_pos.Pos) == '\n') {
                 m_pos.LineY++;
                 m_pos.LineX = 0;
+            } else {
+                m_pos.LineX++;
             }
-
             m_pos.Pos++;
         }
         
@@ -111,7 +112,7 @@ public:
                 else
                     m_pos.LineX = match.LineX;
 
-                m_token = Token(tokenMatcher.Type, match.Content, start, m_pos);
+                m_token = Token(tokenMatcher.ReturnType, match.Content, start, m_pos);
                 return m_token;
             }
         }
@@ -122,7 +123,7 @@ public:
 
     // If the current token matches the provided type, it will consume it and return true.
     bool ConsumeIf(T type) {
-        if (m_token.Type == type) {
+        if (m_token.ReturnType == type) {
             Consume();
             return true;
         }

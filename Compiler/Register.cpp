@@ -53,10 +53,10 @@ void FuncAST::Register(RedyModule& redyModule, Module& module) {
 	std::vector<llvm::Type*> types;
 	types.reserve(Proto.Params.size());
 	for (auto& param : Proto.Params) {
-		types.push_back(redyModule.GetType(param.Symbol.Variable.Type, module.getContext())->LLVMType);
+		types.push_back(redyModule.GetType(param.Symbol.Variable.ReturnType, module.getContext())->LLVMType);
 	}
 	FunctionType* functionType =
-		FunctionType::get(redyModule.GetType(Proto.Type, module.getContext())->LLVMType, types, false);
+		FunctionType::get(redyModule.GetType(Proto.ReturnType, module.getContext())->LLVMType, types, false);
 	LLVMFunc =
 		Function::Create(functionType, Function::ExternalLinkage, Proto.Name, module);
 	// Set names for all arguments.
